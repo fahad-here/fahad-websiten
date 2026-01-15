@@ -1,0 +1,147 @@
+---
+import Container from '../ui/Container.astro';
+import Button from '../ui/Button.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+const navItems = [
+  { label: 'Work', href: '/work' },
+  { label: 'Blog', href: '/blog' },
+  { label: 'About', href: '/about' },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="fixed top-0 left-0 right-0 z-50 bg-bg/80 backdrop-blur-md border-b border-border">
+  <Container>
+    <nav class="flex items-center justify-between h-14">
+      <!-- FH Monogram Logo -->
+      <a href="/" class="group relative flex items-center justify-center w-9 h-9 rounded-lg bg-panel border border-border hover:border-primary-30 transition-all duration-200">
+        <span class="sr-only">Home</span>
+        <span class="text-sm font-bold text-text group-hover:text-primary transition-colors">FH</span>
+        <!-- Subtle glow on hover -->
+        <div class="absolute inset-0 rounded-lg bg-primary/0 group-hover:bg-primary/5 transition-colors"></div>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <div class="hidden md:flex items-center gap-6">
+        {navItems.map((item) => (
+          <a
+            href={item.href}
+            class:list={[
+              'text-sm transition-colors no-underline',
+              currentPath.startsWith(item.href)
+                ? 'text-primary font-medium'
+                : 'text-muted hover:text-text',
+            ]}
+          >
+            {item.label}
+          </a>
+        ))}
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-3">
+        <!-- System Status Pill (Desktop) -->
+        <div class="hidden md:block tooltip-trigger">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-1 h-8 rounded-full text-[11px] font-medium bg-panel border border-border text-muted cursor-default">
+            <span class="relative flex h-1.5 w-1.5">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-success"></span>
+            </span>
+            <span class="hidden lg:inline">System status:</span> Operational
+          </div>
+          <div class="tooltip tooltip-bottom">
+            <span class="text-text">All systems operational</span>
+            <span class="block text-[10px] mt-0.5">(except my sleep schedule)</span>
+            <div class="tooltip-arrow"></div>
+          </div>
+        </div>
+        <ThemeToggle />
+        <Button href="/contact" variant="primary" class="hidden sm:inline-flex">
+          Contact
+        </Button>
+
+        <!-- Mobile Menu Button -->
+        <button
+          id="mobile-menu-button"
+          type="button"
+          class="md:hidden p-2 rounded-lg hover:bg-panel transition-colors"
+          aria-label="Toggle menu"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path id="menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            <path id="close-icon" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    </nav>
+  </Container>
+
+  <!-- Mobile Menu -->
+  <div id="mobile-menu" class="hidden md:hidden border-t border-border bg-bg">
+    <Container>
+      <div class="py-3 space-y-3">
+        {navItems.map((item) => (
+          <a
+            href={item.href}
+            class:list={[
+              'block text-sm transition-colors no-underline',
+              currentPath.startsWith(item.href)
+                ? 'text-primary font-medium'
+                : 'text-muted hover:text-text',
+            ]}
+          >
+            {item.label}
+          </a>
+        ))}
+        <Button href="/contact" variant="primary" class="w-full">
+          Contact
+        </Button>
+        <!-- System Status Pill (Mobile) -->
+        <div class="pt-2 border-t border-border mt-2">
+          <div class="tooltip-trigger inline-block">
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-panel border border-border text-muted cursor-default">
+              <span class="relative flex h-1.5 w-1.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-success"></span>
+              </span>
+              System status: Operational
+            </div>
+            <div class="tooltip tooltip-bottom">
+              <span class="text-text">All systems operational</span>
+              <span class="block text-[10px] mt-0.5">(except my sleep schedule)</span>
+              <div class="tooltip-arrow"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Container>
+  </div>
+</header>
+
+<script>
+  function initMobileMenu() {
+    const button = document.getElementById('mobile-menu-button');
+    const menu = document.getElementById('mobile-menu');
+    const menuIcon = document.getElementById('menu-icon');
+    const closeIcon = document.getElementById('close-icon');
+
+    button?.addEventListener('click', () => {
+      const isOpen = menu?.classList.contains('hidden');
+
+      if (isOpen) {
+        menu?.classList.remove('hidden');
+        menuIcon?.classList.add('hidden');
+        closeIcon?.classList.remove('hidden');
+      } else {
+        menu?.classList.add('hidden');
+        menuIcon?.classList.remove('hidden');
+        closeIcon?.classList.add('hidden');
+      }
+    });
+  }
+
+  initMobileMenu();
+  document.addEventListener('astro:after-swap', initMobileMenu);
+</script>

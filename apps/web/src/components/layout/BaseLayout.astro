@@ -1,0 +1,165 @@
+---
+import { ViewTransitions } from 'astro:transitions';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import '../../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  canonicalUrl?: string;
+  type?: 'website' | 'article';
+}
+
+const {
+  title,
+  description = 'Senior Software Engineer / Tech Lead specializing in fintech backends, payments, cloud infrastructure, and system architecture.',
+  ogImage = '/og-default.png',
+  canonicalUrl,
+  type = 'website',
+} = Astro.props;
+
+const siteUrl = import.meta.env.SITE_URL || 'https://fahadhussain.dev';
+const fullTitle = title === 'Home' ? 'Fahad Hussain | Software Engineer' : `${title} | Fahad Hussain`;
+const fullOgImage = ogImage.startsWith('http') ? ogImage : `${siteUrl}${ogImage}`;
+const fullCanonicalUrl = canonicalUrl || Astro.url.href;
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Primary Meta Tags -->
+    <title>{fullTitle}</title>
+    <meta name="title" content={fullTitle} />
+    <meta name="description" content={description} />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href={fullCanonicalUrl} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={type} />
+    <meta property="og:url" content={fullCanonicalUrl} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={fullOgImage} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={fullCanonicalUrl} />
+    <meta property="twitter:title" content={fullTitle} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={fullOgImage} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- View Transitions for smooth client-side navigation -->
+    <ViewTransitions />
+
+    <!-- Theme Script (prevent flash) -->
+    <script is:inline>
+      const savedTheme = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (savedTheme === 'light' || (!savedTheme && !prefersDark)) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    </script>
+
+    <!-- Progress bar styles -->
+    <style is:inline>
+      #nav-progress-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 2px;
+        width: 0%;
+        background-color: var(--primary);
+        z-index: 9999;
+        transition: width 0.2s ease-out;
+        pointer-events: none;
+      }
+
+      #nav-progress-bar.active {
+        width: 90%;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      #nav-progress-bar.complete {
+        width: 100%;
+        transition: width 0.1s ease-out;
+      }
+
+      #nav-progress-bar.fade-out {
+        opacity: 0;
+        transition: opacity 0.3s ease-out;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #nav-progress-bar {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <!-- Navigation progress bar -->
+    <div id="nav-progress-bar" aria-hidden="true"></div>
+
+    <Header />
+    <main class="flex-1 pt-14">
+      <slot />
+    </main>
+    <Footer />
+
+    <!-- Progress bar script -->
+    <script>
+      function initProgressBar() {
+        const progressBar = document.getElementById('nav-progress-bar');
+        if (!progressBar) return;
+
+        // Check for reduced motion preference
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReducedMotion) return;
+
+        // Navigation start - show progress
+        document.addEventListener('astro:before-preparation', () => {
+          progressBar.classList.remove('complete', 'fade-out');
+          progressBar.style.width = '0%';
+          progressBar.style.opacity = '1';
+          // Force reflow
+          progressBar.offsetHeight;
+          progressBar.classList.add('active');
+        });
+
+        // Navigation complete - finish progress
+        document.addEventListener('astro:after-swap', () => {
+          progressBar.classList.remove('active');
+          progressBar.classList.add('complete');
+
+          // Fade out after completion
+          setTimeout(() => {
+            progressBar.classList.add('fade-out');
+          }, 100);
+
+          // Reset for next navigation
+          setTimeout(() => {
+            progressBar.classList.remove('complete', 'fade-out');
+            progressBar.style.width = '0%';
+          }, 400);
+        });
+      }
+
+      initProgressBar();
+    </script>
+  </body>
+</html>

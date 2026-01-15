@@ -1,0 +1,23 @@
+---
+import Container from '../ui/Container.astro';
+
+const proofItems = [
+  'Payment systems & reconciliation',
+  'Wallets, ledgers & transaction flows',
+  'Event-driven services (queues & workers)',
+  'AWS, Kubernetes & CI/CD in production',
+];
+---
+
+<section class="py-6 border-y border-border bg-panel/30">
+  <Container>
+    <div class="flex flex-wrap justify-center gap-x-6 gap-y-2">
+      {proofItems.map((item, index) => (
+        <span class="text-sm text-muted flex items-center gap-2">
+          {index > 0 && <span class="hidden sm:inline text-border">•</span>}
+          {item}
+        </span>
+      ))}
+    </div>
+  </Container>
+</section>

@@ -1,0 +1,133 @@
+---
+import BaseLayout from '../../components/layout/BaseLayout.astro';
+import Container from '../../components/ui/Container.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import { getAllCaseStudies, getCaseStudyBySlug } from '../../lib/sanity';
+import { getImageUrl } from '../../lib/image';
+import { renderPortableText } from '../../lib/portable-text';
+import type { CaseStudy } from '../../types';
+
+export async function getStaticPaths() {
+  const caseStudies = await getAllCaseStudies();
+  return caseStudies.map((caseStudy) => ({
+    params: { slug: caseStudy.slug.current },
+  }));
+}
+
+const { slug } = Astro.params;
+const caseStudy = await getCaseStudyBySlug(slug as string);
+
+if (!caseStudy) {
+  return Astro.redirect('/work');
+}
+
+const imageUrl = getImageUrl(caseStudy.coverImage, { width: 1200, height: 600 });
+const seoTitle = caseStudy.seo?.metaTitle || caseStudy.title;
+const seoDescription = caseStudy.seo?.metaDescription || caseStudy.summary;
+---
+
+<BaseLayout
+  title={seoTitle}
+  description={seoDescription}
+  ogImage={imageUrl || undefined}
+  type="article"
+>
+  <article class="py-24">
+    <Container>
+      <!-- Header -->
+      <div class="max-w-3xl mb-12">
+        <a href="/work" class="inline-flex items-center text-muted hover:text-accent transition-colors mb-6 no-underline">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Work
+        </a>
+        <h1 class="text-4xl md:text-5xl font-bold text-text mb-4">
+          {caseStudy.title}
+        </h1>
+        <p class="text-xl text-muted mb-6">{caseStudy.summary}</p>
+        <div class="flex flex-wrap items-center gap-4 text-sm text-muted">
+          {caseStudy.role && (
+            <span class="flex items-center gap-2">
+              <span class="text-text font-medium">Role:</span> {caseStudy.role}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <!-- Cover Image -->
+      {imageUrl && (
+        <div class="aspect-video rounded-lg overflow-hidden mb-12 bg-panel">
+          <img
+            src={imageUrl}
+            alt={caseStudy.coverImage?.alt || caseStudy.title}
+            class="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
+      <!-- Content Grid -->
+      <div class="grid lg:grid-cols-3 gap-12">
+        <!-- Main Content -->
+        <div class="lg:col-span-2 space-y-12">
+          <!-- Problem -->
+          <section>
+            <h2 class="text-2xl font-bold text-text mb-4">The Challenge</h2>
+            <p class="text-muted leading-relaxed">{caseStudy.problem}</p>
+          </section>
+
+          <!-- Solution -->
+          <section>
+            <h2 class="text-2xl font-bold text-text mb-4">The Solution</h2>
+            <p class="text-muted leading-relaxed">{caseStudy.solution}</p>
+          </section>
+
+          <!-- Extended Body -->
+          {caseStudy.body && caseStudy.body.length > 0 && (
+            <section class="prose prose-invert max-w-none">
+              <Fragment set:html={renderPortableText(caseStudy.body)} />
+            </section>
+          )}
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="space-y-8">
+          <!-- Impact -->
+          <div class="bg-panel border border-border rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-text mb-4">Impact</h3>
+            <ul class="space-y-3">
+              {caseStudy.impact.map((item) => (
+                <li class="flex items-start gap-3">
+                  <svg class="w-5 h-5 text-accent flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span class="text-muted text-sm">{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <!-- Tech Stack -->
+          {caseStudy.stack && caseStudy.stack.length > 0 && (
+            <div class="bg-panel border border-border rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-text mb-4">Tech Stack</h3>
+              <div class="flex flex-wrap gap-2">
+                {caseStudy.stack.map((tech) => (
+                  <Badge>{tech}</Badge>
+                ))}
+              </div>
+            </div>
+          )}
+        </aside>
+      </div>
+
+      <!-- CTA -->
+      <div class="mt-16 pt-12 border-t border-border text-center">
+        <h3 class="text-2xl font-bold text-text mb-4">Interested in similar results?</h3>
+        <p class="text-muted mb-6">Let's discuss how I can help with your project.</p>
+        <Button href="/contact" variant="primary">Get in Touch</Button>
+      </div>
+    </Container>
+  </article>
+</BaseLayout>

@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../components/layout/BaseLayout.astro';
+import Container from '../components/ui/Container.astro';
+---
+
+<BaseLayout
+  title="Privacy Policy"
+  description="Privacy policy for Fahad Hussain's personal website."
+>
+  <section class="py-24">
+    <Container>
+      <div class="max-w-3xl mx-auto prose prose-lg">
+        <h1 class="text-4xl font-bold text-text mb-8">Privacy Policy</h1>
+
+        <p class="text-muted">Last updated: January 2025</p>
+
+        <h2 class="text-2xl font-bold text-text mt-12 mb-4">Information Collection</h2>
+        <p class="text-muted leading-relaxed">
+          This website collects minimal information. When you use the contact form, I collect your name, email address, and message content solely for the purpose of responding to your inquiry.
+        </p>
+
+        <h2 class="text-2xl font-bold text-text mt-12 mb-4">Analytics</h2>
+        <p class="text-muted leading-relaxed">
+          This site may use privacy-focused analytics to understand general traffic patterns. No personally identifiable information is collected through analytics.
+        </p>
+
+        <h2 class="text-2xl font-bold text-text mt-12 mb-4">Cookies</h2>
+        <p class="text-muted leading-relaxed">
+          This website uses only essential cookies required for functionality, such as remembering your theme preference (dark/light mode). No tracking cookies are used.
+        </p>
+
+        <h2 class="text-2xl font-bold text-text mt-12 mb-4">Third-Party Services</h2>
+        <p class="text-muted leading-relaxed">
+          This site is hosted on Netlify and uses Sanity as a content management system. These services may collect standard server logs. Please refer to their respective privacy policies for more information.
+        </p>
+
+        <h2 class="text-2xl font-bold text-text mt-12 mb-4">Contact</h2>
+        <p class="text-muted leading-relaxed">
+          If you have questions about this privacy policy, please contact me at <a href="mailto:fmohajir@gmail.com" class="text-accent">fmohajir@gmail.com</a>.
+        </p>
+      </div>
+    </Container>
+  </section>
+</BaseLayout>

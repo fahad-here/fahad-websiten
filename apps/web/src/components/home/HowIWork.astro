@@ -1,0 +1,160 @@
+---
+import Container from '../ui/Container.astro';
+
+const stages = [
+  {
+    number: '01',
+    title: 'Understand',
+    description: 'Map the current flow, identify bottlenecks, and clarify technical and business constraints before writing any code.',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />`,
+  },
+  {
+    number: '02',
+    title: 'Design',
+    description: 'Build for retries, timeouts, recovery paths, and visibility into production behavior. Assume failure happens.',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />`,
+  },
+  {
+    number: '03',
+    title: 'Ship',
+    description: 'Roll out incrementally, monitor closely, and iterate based on real-world feedback. Production is the test.',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />`,
+  },
+];
+---
+
+<section class="py-16 relative process-section">
+  <!-- Distinct background -->
+  <div class="absolute inset-0 bg-panel-2/50"></div>
+  <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+  <div class="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
+
+  <Container>
+    <div class="relative">
+      <!-- Section header -->
+      <div class="mb-12 text-center">
+        <span class="inline-block text-[10px] font-medium uppercase tracking-widest text-muted mb-3">Process</span>
+        <h2 class="text-xl md:text-2xl font-semibold text-text">How I approach problems</h2>
+      </div>
+
+      <!-- Stage cards -->
+      <div class="grid md:grid-cols-3 gap-6 lg:gap-8">
+        {stages.map((stage, index) => (
+          <article
+            class="stage-card group"
+            style={`--delay: ${index * 100}ms`}
+          >
+            <!-- Large number as visual anchor -->
+            <span class="block text-5xl md:text-6xl font-bold text-primary/10 group-hover:text-primary/20 transition-colors duration-300 mb-4 leading-none">
+              {stage.number}
+            </span>
+
+            <!-- Icon -->
+            <div class="w-10 h-10 rounded-lg bg-bg border border-border flex items-center justify-center mb-4 group-hover:border-primary-30 transition-colors duration-300">
+              <svg
+                class="w-5 h-5 text-muted group-hover:text-primary transition-colors duration-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                set:html={stage.icon}
+              />
+            </div>
+
+            <!-- Title -->
+            <h3 class="text-base font-semibold text-text mb-2">{stage.title}</h3>
+
+            <!-- Description -->
+            <p class="text-sm text-muted leading-relaxed">{stage.description}</p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </Container>
+</section>
+
+<style>
+  .stage-card {
+    @apply bg-panel border border-border rounded-xl p-6;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.18s ease-out, box-shadow 0.18s ease-out, border-color 0.18s ease-out;
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  .stage-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-hover);
+    border-color: var(--card-border-hover);
+  }
+
+  .stage-card:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px var(--ring), var(--card-shadow-hover);
+    border-color: var(--card-border-hover);
+  }
+
+  /* Scroll-triggered animation */
+  .process-section.in-view .stage-card {
+    animation: stageReveal 0.5s ease-out forwards;
+    animation-delay: var(--delay);
+  }
+
+  @keyframes stageReveal {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .stage-card {
+      opacity: 1;
+      transform: none;
+    }
+
+    .stage-card:hover {
+      transform: none;
+    }
+
+    .process-section.in-view .stage-card {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  function initProcessSection() {
+    const section = document.querySelector('.process-section');
+    if (!section) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      section.classList.add('in-view');
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+
+    observer.observe(section);
+  }
+
+  initProcessSection();
+  document.addEventListener('astro:after-swap', initProcessSection);
+</script>

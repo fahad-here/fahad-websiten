@@ -1,0 +1,186 @@
+{
+  "caseStudies": [
+    {
+      "_type": "caseStudy",
+      "title": "Forex CRM Re-Architecture",
+      "slug": { "current": "forex-crm-re-architecture" },
+      "summary": "Transformed a legacy CRM into a modern, scalable platform for a leading forex broker.",
+      "problem": "The existing CRM was built on outdated technology, suffering from poor performance, frequent downtime, and an inability to scale with growing user demands. The monolithic architecture made updates risky and time-consuming, while redundant code and database queries slowed everything down.",
+      "solution": "Led a complete re-architecture of the system, breaking it into modular services. Implemented efficient database indexing, optimized queries, and introduced caching layers. Developed a seamless migration script to transfer over 300,000 individual assets from the old system to the new one, ensuring data integrity throughout the process.",
+      "impact": [
+        "50% improvement in system responsiveness",
+        "Eliminated redundant code and database queries",
+        "Significantly reduced downtime",
+        "Successful migration of 300,000+ assets",
+        "Major cost savings on infrastructure"
+      ],
+      "stack": ["Node.js", "MySQL", "Redis", "ElasticSearch", "Docker", "AWS"],
+      "role": "Lead Engineer",
+      "featured": true,
+      "publishedAt": "2024-06-15T00:00:00Z"
+    },
+    {
+      "_type": "caseStudy",
+      "title": "Payment Gateway Platform",
+      "slug": { "current": "payment-gateway-platform" },
+      "summary": "Built a unified payment microservice with queue-based reliability for a multi-asset trading platform.",
+      "problem": "The platform was integrating with multiple payment gateways, each with different APIs and response formats. Deposits were occasionally missed during gateway downtime or network issues, leading to customer complaints and manual reconciliation work.",
+      "solution": "Designed and implemented a unified payment gateway wrapper as a self-hosted microservice. Introduced a queue-based system to ensure no deposits were missed during downtime. All transactions were logged and tracked, with automatic retry mechanisms and real-time status updates to the CRM.",
+      "impact": [
+        "Zero missed deposits since implementation",
+        "Unified API for all payment providers",
+        "Real-time transaction tracking",
+        "Automated retry and reconciliation",
+        "Significant reduction in support tickets"
+      ],
+      "stack": ["Node.js", "RabbitMQ", "MySQL", "Redis", "Docker"],
+      "role": "Lead Engineer",
+      "featured": true,
+      "publishedAt": "2024-03-20T00:00:00Z"
+    },
+    {
+      "_type": "caseStudy",
+      "title": "Real-Time Commissions Engine",
+      "slug": { "current": "real-time-commissions-engine" },
+      "summary": "Developed a real-time rebates and commissions system using MT5 pumping integration.",
+      "problem": "Commission calculations for introducing brokers (IBs) were delayed and often inaccurate. Statements were generated manually, leading to errors and slow turnaround times. The existing system couldn't handle the volume of trades in real-time.",
+      "solution": "Built a real-time solution using MT5 pumping to receive trade data instantly. Implemented an efficient calculation engine that processes rebates and commissions as trades occur. Developed automated statement generation via cron jobs, delivering accurate reports to IBs daily.",
+      "impact": [
+        "Real-time commission calculations",
+        "80% faster statement access",
+        "Eliminated manual calculation errors",
+        "Improved IB satisfaction",
+        "Scalable to handle 10x trade volume"
+      ],
+      "stack": ["Node.js", "MT5 API", "MySQL", "Redis", "Cron"],
+      "role": "Senior Engineer",
+      "featured": true,
+      "publishedAt": "2023-09-10T00:00:00Z"
+    },
+    {
+      "_type": "caseStudy",
+      "title": "Crypto Exchange Platform",
+      "slug": { "current": "crypto-exchange-platform" },
+      "summary": "Developed a white-label crypto exchange with real-time price aggregation and order execution.",
+      "problem": "A fintech startup needed a basic crypto trading solution they could white-label for their clients. They required real-time price feeds, order execution, and integration with their existing CRM for deposits and withdrawals.",
+      "solution": "Built a white-label crypto exchange platform featuring real-time price aggregation from multiple sources, live price tickers via WebSocket, intelligent caching to reduce API calls, and reliable order execution. Integrated a crypto payment gateway for seamless deposits and withdrawals.",
+      "impact": [
+        "Launch-ready MVP delivered on schedule",
+        "Real-time price updates under 100ms",
+        "Seamless CRM integration",
+        "Reduced API costs through smart caching",
+        "Successfully white-labeled for 3 clients"
+      ],
+      "stack": ["Node.js", "WebSocket", "Redis", "MongoDB", "Crypto APIs"],
+      "role": "Senior Engineer",
+      "featured": true,
+      "publishedAt": "2023-05-01T00:00:00Z"
+    }
+  ],
+  "posts": [
+    {
+      "_type": "post",
+      "title": "Designing Reliable Payment Systems: Lessons from the Trenches",
+      "slug": { "current": "designing-reliable-payment-systems" },
+      "excerpt": "Key principles for building payment infrastructure that never misses a transaction, based on years of experience in fintech.",
+      "publishedAt": "2024-12-01T00:00:00Z",
+      "author": "Fahad Hussain",
+      "categories": ["Architecture", "Payments", "Fintech"],
+      "readingTime": 8,
+      "body": [
+        {
+          "_type": "block",
+          "style": "normal",
+          "children": [{ "_type": "span", "text": "After building payment systems for multiple forex brokers, I've learned that reliability isn't just a feature—it's the foundation. Here are the key principles that have guided my approach to payment infrastructure." }]
+        },
+        {
+          "_type": "block",
+          "style": "h2",
+          "children": [{ "_type": "span", "text": "1. Never Trust the Network" }]
+        },
+        {
+          "_type": "block",
+          "style": "normal",
+          "children": [{ "_type": "span", "text": "Payment gateways go down. Networks fail. Timeouts happen. Your system needs to handle all of these gracefully. The solution? Queue everything. Every transaction should be persisted before attempting to process it." }]
+        },
+        {
+          "_type": "block",
+          "style": "h2",
+          "children": [{ "_type": "span", "text": "2. Idempotency is Non-Negotiable" }]
+        },
+        {
+          "_type": "block",
+          "style": "normal",
+          "children": [{ "_type": "span", "text": "Every payment operation should be idempotent. If a request is retried, it should produce the same result. This means generating unique transaction IDs client-side and checking for duplicates server-side before processing." }]
+        },
+        {
+          "_type": "block",
+          "style": "h2",
+          "children": [{ "_type": "span", "text": "3. Log Everything, Reconcile Daily" }]
+        },
+        {
+          "_type": "block",
+          "style": "normal",
+          "children": [{ "_type": "span", "text": "Comprehensive logging isn't optional in payment systems. Every state change, every API call, every response should be logged with timestamps. And automated reconciliation should run daily to catch any discrepancies before they become problems." }]
+        }
+      ]
+    },
+    {
+      "_type": "post",
+      "title": "From Monolith to Microservices: A Practical Migration Guide",
+      "slug": { "current": "monolith-to-microservices-migration" },
+      "excerpt": "A step-by-step approach to breaking down legacy monoliths without disrupting business operations.",
+      "publishedAt": "2024-10-15T00:00:00Z",
+      "author": "Fahad Hussain",
+      "categories": ["Architecture", "Migration", "Best Practices"],
+      "readingTime": 10,
+      "body": [
+        {
+          "_type": "block",
+          "style": "normal",
+          "children": [{ "_type": "span", "text": "Migrating from a monolith to microservices is one of the most challenging—and rewarding—projects you can undertake. Here's how to do it without bringing your business to a halt." }]
+        },
+        {
+          "_type": "block",
+          "style": "h2",
+          "children": [{ "_type": "span", "text": "Start with the Strangler Pattern" }]
+        },
+        {
+          "_type": "block",
+          "style": "normal",
+          "children": [{ "_type": "span", "text": "Don't try to rewrite everything at once. The strangler pattern lets you gradually replace pieces of your monolith with new services while keeping the old system running. Route new features to new services, and slowly migrate existing functionality." }]
+        },
+        {
+          "_type": "block",
+          "style": "h2",
+          "children": [{ "_type": "span", "text": "Identify Bounded Contexts" }]
+        },
+        {
+          "_type": "block",
+          "style": "normal",
+          "children": [{ "_type": "span", "text": "Before splitting anything, understand your domain. What are the natural boundaries in your business logic? In a forex CRM, this might be: user management, KYC, trading accounts, payments, and reporting. Each of these can become its own service." }]
+        },
+        {
+          "_type": "block",
+          "style": "h2",
+          "children": [{ "_type": "span", "text": "Data is the Hard Part" }]
+        },
+        {
+          "_type": "block",
+          "style": "normal",
+          "children": [{ "_type": "span", "text": "The biggest challenge isn't the code—it's the data. Plan your data migration carefully. Consider running dual-writes during transition, and always have a rollback plan. I've successfully migrated 300,000+ records using this approach." }]
+        }
+      ]
+    }
+  ],
+  "siteSettings": {
+    "_type": "siteSettings",
+    "siteTitle": "Fahad Hussain | Lead Software Engineer",
+    "siteDescription": "Lead Software Engineer specializing in fintech infrastructure, payment systems, and high-performance backend development.",
+    "socialLinks": {
+      "github": "https://github.com/fahadhussain",
+      "linkedin": "https://linkedin.com/in/fahadhussain",
+      "email": "fmohajir@gmail.com"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+---
+import Container from '../ui/Container.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import Badge from '../ui/Badge.astro';
+
+const categories = [
+  {
+    name: 'Backend',
+    items: ['Node.js', 'Python', 'Django', 'DRF', 'Express'],
+  },
+  {
+    name: 'Databases',
+    items: ['MySQL', 'MongoDB', 'Redis', 'ElasticSearch'],
+  },
+  {
+    name: 'Infrastructure',
+    items: ['Docker', 'Kubernetes', 'AWS', 'Azure'],
+  },
+  {
+    name: 'Frontend',
+    items: ['React', 'React Native', 'Redux', 'TypeScript'],
+  },
+  {
+    name: 'Tools',
+    items: ['RabbitMQ', 'GitHub Actions', 'Jira', 'Git'],
+  },
+];
+---
+
+<section class="py-24">
+  <Container>
+    <SectionHeader
+      title="Tech Toolbox"
+      subtitle="The technologies I use to build robust, scalable systems."
+    />
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      {categories.map((category) => (
+        <div>
+          <h3 class="text-sm font-medium text-muted uppercase tracking-wider mb-4">
+            {category.name}
+          </h3>
+          <div class="flex flex-wrap gap-2">
+            {category.items.map((item) => (
+              <Badge>{item}</Badge>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </Container>
+</section>

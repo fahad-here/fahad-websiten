@@ -1,0 +1,24 @@
+---
+interface Props {
+  label?: string;
+  class?: string;
+}
+
+const { label, class: className = '' } = Astro.props;
+---
+
+<div class:list={["relative", className]}>
+  {label ? (
+    <!-- With label: centered label with gradient lines -->
+    <div class="flex items-center gap-4">
+      <div class="flex-1 h-px bg-gradient-to-r from-transparent to-border"></div>
+      <span class="text-[10px] font-medium uppercase tracking-widest text-muted">
+        {label}
+      </span>
+      <div class="flex-1 h-px bg-gradient-to-l from-transparent to-border"></div>
+    </div>
+  ) : (
+    <!-- Without label: simple gradient line -->
+    <div class="h-px w-full bg-gradient-to-r from-transparent via-border to-transparent"></div>
+  )}
+</div>

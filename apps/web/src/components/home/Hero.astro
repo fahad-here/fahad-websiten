@@ -1,0 +1,34 @@
+---
+import Container from '../ui/Container.astro';
+import Button from '../ui/Button.astro';
+---
+
+<section class="relative py-16 md:py-24 overflow-hidden">
+  <!-- Subtle gradient glow - ONLY decorative element allowed -->
+  <div class="absolute inset-0 pointer-events-none">
+    <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-1/4 right-1/4 w-64 h-64 bg-secondary/5 rounded-full blur-3xl"></div>
+  </div>
+
+  <!-- Subtle grid pattern -->
+  <div class="absolute inset-0 opacity-[0.02] pointer-events-none" style="background-image: linear-gradient(var(--text) 1px, transparent 1px), linear-gradient(90deg, var(--text) 1px, transparent 1px); background-size: 60px 60px;"></div>
+
+  <Container>
+    <div class="relative max-w-3xl">
+      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold text-text mb-4 leading-tight">
+        I build payment systems and internal platforms that survive production.
+      </h1>
+      <p class="text-base md:text-lg text-muted mb-6 leading-relaxed max-w-2xl">
+        Senior Software Engineer / Tech Lead specializing in fintech backends, payments, cloud infrastructure, and system architecture.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <Button href="/work" variant="primary">
+          View Selected Work
+        </Button>
+        <Button href="/contact" variant="outline">
+          Get in Touch
+        </Button>
+      </div>
+    </div>
+  </Container>
+</section>

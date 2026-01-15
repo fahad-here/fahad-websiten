@@ -1,0 +1,20 @@
+[build]
+  command = "npm run build --workspace=apps/web"
+  publish = "apps/web/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Language = ["en"]}
+  force = false
+
+# Enable Netlify Forms
+[build.processing]
+  skip_processing = false
+
+[build.processing.html]
+  pretty_urls = true

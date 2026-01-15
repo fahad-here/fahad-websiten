@@ -1,0 +1,27 @@
+---
+interface Props {
+  variant?: 'default' | 'subtle';
+  size?: 'sm' | 'default';
+  class?: string;
+}
+
+const { variant = 'default', size = 'default', class: className = '' } = Astro.props;
+
+const baseClasses = 'inline-flex items-center rounded font-medium';
+
+const sizeClasses = {
+  sm: 'px-1.5 py-0.5 text-[10px]',
+  default: 'px-2 py-0.5 text-xs',
+};
+
+const variantClasses = {
+  default: 'bg-panel-2 text-muted border border-border/50',
+  subtle: 'text-muted',
+};
+
+const classes = `${baseClasses} ${sizeClasses[size]} ${variantClasses[variant]} ${className}`;
+---
+
+<span class={classes}>
+  <slot />
+</span>

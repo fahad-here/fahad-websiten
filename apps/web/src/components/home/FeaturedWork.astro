@@ -1,0 +1,106 @@
+---
+import Container from '../ui/Container.astro';
+import Button from '../ui/Button.astro';
+import Badge from '../ui/Badge.astro';
+import WorkCard from '../work/WorkCard.astro';
+import type { CaseStudy } from '../../types';
+
+interface Props {
+  caseStudies: CaseStudy[];
+}
+
+const { caseStudies } = Astro.props;
+
+// Placeholder case studies when Sanity has no content
+const placeholderCaseStudies = [
+  {
+    title: 'Wallet & Transaction Processing',
+    problem: 'Needed reliable balance tracking and payment state management across multiple providers.',
+    outcome: 'Designed a ledger-based system with idempotent webhooks and event-driven processing.',
+    stack: ['Node.js', 'Django', 'MySQL', 'Redis'],
+    gradient: 'from-cyan-500/15 to-blue-600/15',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 12a2.25 2.25 0 00-2.25-2.25H15a3 3 0 11-6 0H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9M3 12V9m18 0a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 9m18 0V6a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 6v3" />`,
+  },
+  {
+    title: 'Multi-Gateway Payment Layer',
+    problem: 'Payment flows were tightly coupled and hard to monitor or reconcile.',
+    outcome: 'Built a unified layer with queue-based processing and webhook reconciliation.',
+    stack: ['Node.js', 'Python', 'BullMQ', 'RabbitMQ'],
+    gradient: 'from-purple-500/15 to-pink-600/15',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />`,
+  },
+  {
+    title: 'CRM Re-Architecture',
+    problem: 'Legacy system was slowing development and affecting reliability.',
+    outcome: 'Led incremental re-architecture, improving performance without downtime.',
+    stack: ['React', 'APIs', 'Elasticsearch', 'AWS'],
+    gradient: 'from-emerald-500/15 to-teal-600/15',
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L21.75 12l-4.179 2.25m0 0l4.179 2.25L12 21.75 2.25 16.5l4.179-2.25m11.142 0l-5.571 3-5.571-3" />`,
+  },
+];
+
+const showPlaceholders = caseStudies.length === 0;
+---
+
+<section class="py-12">
+  <Container>
+    <!-- Section header -->
+    <div class="mb-8 text-center">
+      <span class="inline-block text-[10px] font-medium uppercase tracking-widest text-muted mb-3">Selected Work</span>
+      <h2 class="text-xl md:text-2xl font-semibold text-text">Systems I've built</h2>
+    </div>
+
+    {showPlaceholders ? (
+      <div class="grid lg:grid-cols-3 gap-5 mb-8">
+        {placeholderCaseStudies.map((study) => (
+          <article class="group card-interactive overflow-hidden">
+            <!-- Visual thumbnail -->
+            <div class={`relative h-24 bg-gradient-to-br ${study.gradient} flex items-center justify-center`}>
+              <div class="w-11 h-11 rounded-lg bg-panel/90 border border-border flex items-center justify-center">
+                <svg
+                  class="w-5 h-5 text-muted group-hover:text-primary transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  set:html={study.icon}
+                />
+              </div>
+            </div>
+
+            <!-- Content -->
+            <div class="p-5">
+              <h3 class="text-sm font-semibold text-text mb-3">{study.title}</h3>
+              <div class="space-y-2 mb-4">
+                <div>
+                  <span class="text-[10px] font-medium text-muted uppercase tracking-wide">Problem</span>
+                  <p class="text-xs text-text-2 mt-0.5 line-clamp-2">{study.problem}</p>
+                </div>
+                <div>
+                  <span class="text-[10px] font-medium text-muted uppercase tracking-wide">Outcome</span>
+                  <p class="text-xs text-text-2 mt-0.5 line-clamp-2">{study.outcome}</p>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-1">
+                {study.stack.map((tech) => (
+                  <Badge size="sm">{tech}</Badge>
+                ))}
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    ) : (
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
+        {caseStudies.slice(0, 3).map((caseStudy) => (
+          <WorkCard caseStudy={caseStudy} />
+        ))}
+      </div>
+    )}
+
+    <div class="text-center">
+      <Button href="/work" variant="outline">
+        View All Projects
+      </Button>
+    </div>
+  </Container>
+</section>

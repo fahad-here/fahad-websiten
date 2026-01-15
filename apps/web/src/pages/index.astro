@@ -1,0 +1,50 @@
+---
+import BaseLayout from '../components/layout/BaseLayout.astro';
+import Container from '../components/ui/Container.astro';
+import SectionDivider from '../components/ui/SectionDivider.astro';
+import Hero from '../components/home/Hero.astro';
+import ProofTiles from '../components/home/ProofTiles.astro';
+import FeaturedWork from '../components/home/FeaturedWork.astro';
+import Services from '../components/home/Services.astro';
+import HowIWork from '../components/home/HowIWork.astro';
+import LatestWriting from '../components/home/LatestWriting.astro';
+import ContactCTA from '../components/home/ContactCTA.astro';
+import { getFeaturedCaseStudies, getRecentPosts } from '../lib/sanity';
+
+// Fetch data from Sanity
+let caseStudies = [];
+let posts = [];
+
+try {
+  caseStudies = await getFeaturedCaseStudies();
+  posts = await getRecentPosts(3);
+} catch (error) {
+  console.error('Error fetching content from Sanity:', error);
+}
+---
+
+<BaseLayout title="Home">
+  <Hero />
+  <ProofTiles />
+
+  <Container>
+    <SectionDivider class="my-12" />
+  </Container>
+
+  <FeaturedWork caseStudies={caseStudies} />
+
+  <Container>
+    <SectionDivider class="my-12" />
+  </Container>
+
+  <Services />
+
+  <HowIWork />
+
+  <Container>
+    <SectionDivider class="my-12" />
+  </Container>
+
+  <LatestWriting posts={posts} />
+  <ContactCTA />
+</BaseLayout>

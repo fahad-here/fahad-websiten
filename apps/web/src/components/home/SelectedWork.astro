@@ -1,0 +1,32 @@
+---
+import Container from '../ui/Container.astro';
+import SectionHeader from '../ui/SectionHeader.astro';
+import Button from '../ui/Button.astro';
+import WorkCard from '../work/WorkCard.astro';
+import type { CaseStudy } from '../../types';
+
+interface Props {
+  caseStudies: CaseStudy[];
+}
+
+const { caseStudies } = Astro.props;
+---
+
+<section class="py-24">
+  <Container>
+    <SectionHeader
+      title="Selected Work"
+      subtitle="Projects where I led the architecture, development, and delivery of critical fintech systems."
+    />
+    <div class="grid md:grid-cols-2 gap-6 mb-12">
+      {caseStudies.map((caseStudy) => (
+        <WorkCard caseStudy={caseStudy} />
+      ))}
+    </div>
+    <div class="text-center">
+      <Button href="/work" variant="secondary">
+        View All Projects
+      </Button>
+    </div>
+  </Container>
+</section>

@@ -1,0 +1,293 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+:root[data-theme="dark"] {
+  /* Surfaces - strong contrast between bg and panels */
+  --bg: #030508;
+  --panel: #0A1018;
+  --panel-2: #111927;
+  --border: rgba(255, 255, 255, 0.08);
+
+  /* Text */
+  --text: #EAF0FF;
+  --text-2: rgba(234, 240, 255, 0.75);
+  --muted: #8896B3;
+
+  /* Brand */
+  --primary: #22D3EE;
+  --primary-rgb: 34 211 238;
+  --primary-2: #0891B2;
+  --secondary: #6366F1;
+  --secondary-rgb: 99 102 241;
+  --accent: #22D3EE;
+
+  /* UI */
+  --ring: rgba(34, 211, 238, 0.35);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+
+  /* Card shadows - dark mode: subtle glow effect */
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(34, 211, 238, 0.08);
+  --card-border-hover: rgba(34, 211, 238, 0.2);
+
+  /* Semantics */
+  --success: #22C55E;
+  --success-rgb: 34 197 94;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+}
+
+:root[data-theme="light"] {
+  /* Surfaces - clean contrast */
+  --bg: #F8FAFC;
+  --panel: #FFFFFF;
+  --panel-2: #F1F5F9;
+  --border: rgba(15, 23, 42, 0.08);
+
+  /* Text */
+  --text: #0F172A;
+  --text-2: rgba(15, 23, 42, 0.75);
+  --muted: #64748B;
+
+  /* Brand */
+  --primary: #0891B2;
+  --primary-rgb: 8 145 178;
+  --primary-2: #0E7490;
+  --secondary: #4F46E5;
+  --secondary-rgb: 79 70 229;
+  --accent: #0891B2;
+
+  /* UI */
+  --ring: rgba(8, 145, 178, 0.25);
+  --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+
+  /* Card shadows - light mode: soft elevation */
+  --card-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  --card-shadow-hover: 0 10px 40px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(15, 23, 42, 0.05);
+  --card-border-hover: rgba(8, 145, 178, 0.25);
+
+  /* Semantics */
+  --success: #16A34A;
+  --success-rgb: 22 163 74;
+  --warning: #D97706;
+  --danger: #DC2626;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg text-text font-sans antialiased;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  a {
+    @apply text-primary hover:underline;
+  }
+}
+
+@layer components {
+  .container {
+    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* ─────────────────────────────────────────────────────────
+     INTERACTIVE CARD SYSTEM
+     Theme-aware hover effects for all card-like components
+     ───────────────────────────────────────────────────────── */
+
+  /* Base interactive card - use this for all hoverable cards */
+  .card-interactive {
+    @apply bg-panel border border-border rounded-xl;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.18s ease-out, box-shadow 0.18s ease-out, border-color 0.18s ease-out;
+  }
+
+  .card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-hover);
+    border-color: var(--card-border-hover);
+  }
+
+  .card-interactive:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px var(--ring), var(--card-shadow-hover);
+    border-color: var(--card-border-hover);
+  }
+
+  /* Subtle variant - less lift, same shadow feedback */
+  .card-interactive-subtle {
+    @apply bg-panel border border-border rounded-xl;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.18s ease-out, box-shadow 0.18s ease-out, border-color 0.18s ease-out;
+  }
+
+  .card-interactive-subtle:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--card-shadow-hover);
+    border-color: var(--card-border-hover);
+  }
+
+  .card-interactive-subtle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px var(--ring), var(--card-shadow-hover);
+    border-color: var(--card-border-hover);
+  }
+
+  /* Legacy card class - kept for backward compatibility */
+  .card {
+    @apply bg-panel border border-border rounded-xl p-6;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.18s ease-out, box-shadow 0.18s ease-out, border-color 0.18s ease-out;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow-hover);
+    border-color: var(--card-border-hover);
+  }
+
+  .card-elevated {
+    @apply bg-panel-2 border border-border rounded-xl p-6;
+    box-shadow: var(--card-shadow);
+  }
+
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-panel border border-border;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-medium transition-all duration-200;
+  }
+
+  .btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+
+  .btn-primary {
+    background-color: var(--primary);
+    color: var(--bg);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--primary-2);
+  }
+
+  .btn-secondary {
+    @apply bg-panel border border-border text-text;
+  }
+
+  .btn-secondary:hover {
+    @apply bg-panel-2;
+  }
+
+  .btn-ghost {
+    @apply text-text;
+  }
+
+  .btn-ghost:hover {
+    @apply bg-panel;
+  }
+
+  /* Focus ring utility */
+  .focus-ring:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+
+  /* Section divider - gradient line */
+  .section-divider {
+    @apply h-px w-full;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+  }
+
+  /* Reusable tooltip styles */
+  .tooltip-trigger {
+    position: relative;
+  }
+
+  .tooltip {
+    @apply absolute z-50 px-3 py-2 text-xs rounded-lg whitespace-nowrap pointer-events-none;
+    @apply bg-panel-2 border border-border text-muted;
+    @apply opacity-0 invisible;
+    transition: opacity 0.15s ease, visibility 0.15s ease;
+  }
+
+  .tooltip-trigger:hover .tooltip,
+  .tooltip-trigger:focus-within .tooltip {
+    @apply opacity-100 visible;
+  }
+
+  .tooltip-top {
+    @apply bottom-full left-1/2 -translate-x-1/2 mb-2;
+  }
+
+  .tooltip-bottom {
+    @apply top-full left-1/2 -translate-x-1/2 mt-2;
+  }
+
+  .tooltip-arrow {
+    @apply absolute w-2 h-2 bg-panel-2 border-border transform rotate-45;
+  }
+
+  .tooltip-top .tooltip-arrow {
+    @apply top-full left-1/2 -translate-x-1/2 -mt-1 border-r border-b;
+  }
+
+  .tooltip-bottom .tooltip-arrow {
+    @apply bottom-full left-1/2 -translate-x-1/2 mb-1 border-l border-t;
+  }
+
+}
+
+@layer utilities {
+  /* Border utilities for primary color with opacity */
+  .border-primary-20 {
+    border-color: rgb(var(--primary-rgb) / 0.2);
+  }
+  .border-primary-30 {
+    border-color: rgb(var(--primary-rgb) / 0.3);
+  }
+  .border-primary-50 {
+    border-color: rgb(var(--primary-rgb) / 0.5);
+  }
+  .hover\:border-primary-20:hover {
+    border-color: rgb(var(--primary-rgb) / 0.2);
+  }
+  .hover\:border-primary-30:hover {
+    border-color: rgb(var(--primary-rgb) / 0.3);
+  }
+  .group:hover .group-hover\:border-primary-20 {
+    border-color: rgb(var(--primary-rgb) / 0.2);
+  }
+  .group:hover .group-hover\:border-primary-30 {
+    border-color: rgb(var(--primary-rgb) / 0.3);
+  }
+}
+
+/* Respect reduced motion globally */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Cards keep shadow feedback but no movement */
+  .card-interactive:hover,
+  .card-interactive-subtle:hover,
+  .card:hover {
+    transform: none;
+  }
+}
