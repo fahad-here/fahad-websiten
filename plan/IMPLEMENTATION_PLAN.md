@@ -180,11 +180,32 @@ ONE tasteful easter egg in footer:
 - Mono: `ui-monospace, monospace` for tags/metrics
 
 ### 2.5 Base Components
-- `Button.astro` (primary, outline variants)
-- `Card.astro` (base card with hover lift)
-- `Badge.astro` (tech tags)
+- `Button.astro` (primary, secondary, outline, ghost variants)
+- `Card.astro` (base card with hover lift using `.card-interactive`)
+- `Badge.astro` (tech tags with default, subtle, accent variants)
 - `SectionHeader.astro`
 - `Container.astro` (max-width wrapper)
+- `SectionDivider.astro` (gradient line divider)
+
+### 2.6 Card Hover System (IMPLEMENTED)
+Theme-aware card hover effects with CSS custom properties:
+
+```css
+/* Dark mode shadows */
+--card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+--card-shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(34, 211, 238, 0.08);
+--card-border-hover: rgba(34, 211, 238, 0.2);
+
+/* Light mode shadows */
+--card-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+--card-shadow-hover: 0 10px 40px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(15, 23, 42, 0.05);
+--card-border-hover: rgba(8, 145, 178, 0.25);
+```
+
+Utility classes:
+- `.card-interactive` - Full hover effect with 2px lift
+- `.card-interactive-subtle` - Subtle 1px lift variant
+- Includes `prefers-reduced-motion` support
 
 ---
 
@@ -219,11 +240,16 @@ ONE tasteful easter egg in footer:
 - Nav: Work, Blog, About, Contact
 - Theme toggle button
 
-### 4.3 Footer
-- Social links (GitHub, LinkedIn, Email)
-- Copyright
+### 4.3 Footer - IMPLEMENTED
+- Social links:
+  - GitHub: https://github.com/fahad-here
+  - LinkedIn: https://www.linkedin.com/in/mohammed-fahad-29a988165
+  - Email: mailto:fmohajir@gmail.com
+- Copyright with dynamic year
 - Privacy link
-- **Easter Egg:** "System Status: Operational" chip with tooltip OR command snippet with copy-on-click
+- **Easter Eggs:**
+  - "Page TTFB: ~20ms" with tooltip "Static HTML. As it should be."
+  - "No unnecessary frameworks were used." with tooltip "Right tool, right problem."
 
 ---
 
@@ -365,14 +391,21 @@ My work focuses on designing and operating backend systems where correctness, re
 
 **Experience:** Timeline cards with icons and better spacing. Factual, verifiable bullet points.
 
-### 5.7 Contact (`/contact`)
-- Netlify form (name, email, message)
-- Hidden `form-name` field
-- Success/error states
-- Fallback mailto link
-- Social links
+### 5.7 Contact (`/contact`) - IMPLEMENTED
+- Netlify form with `data-netlify="true"` and `netlify-honeypot="bot-field"`
+- Hidden `form-name` field for Netlify detection
+- Progressive enhancement (works without JavaScript)
+- Inline success/error states with JavaScript fetch
+- Honeypot spam protection
+- Redirects to `/thanks` page on non-JS submission
+- Social links sidebar (Email, LinkedIn, GitHub)
 
-### 5.8 Privacy (`/privacy`) - Optional
+### 5.8 Thanks (`/thanks`) - IMPLEMENTED
+- Success page for form submission redirect
+- Clean confirmation message with checkmark icon
+- "Back to Home" button
+
+### 5.9 Privacy (`/privacy`)
 - Basic privacy policy template
 
 ---
@@ -383,14 +416,14 @@ My work focuses on designing and operating backend systems where correctness, re
 - Per-page `<title>` and meta description
 - OpenGraph + Twitter Card meta
 - Canonical URLs
-- `sitemap.xml` via `@astrojs/sitemap`
+- `sitemap.xml` via `@astrojs/sitemap` - **TEMPORARILY DISABLED** (bug: "Cannot read properties of undefined (reading 'reduce')")
 - `robots.txt`
 - RSS feed at `/rss.xml`
 - JSON-LD: WebSite (home), BlogPosting (posts)
 
 ### 6.2 Performance
 - Static generation (no SSR)
-- Minimal client JS (only theme toggle)
+- Minimal client JS (only theme toggle + contact form enhancement)
 - Responsive images via Sanity image URL builder
 - Font optimization (swap display)
 
@@ -501,19 +534,36 @@ apps/web/
 
 ---
 
+## Known Issues
+
+### @astrojs/sitemap Bug
+The sitemap integration crashes during build with error:
+```
+Cannot read properties of undefined (reading 'reduce')
+```
+**Status:** Temporarily disabled in `astro.config.mjs`
+**Workaround:** Manually create sitemap.xml or wait for package update
+
+### TypeScript Type Annotations
+All Sanity data arrays now have proper type annotations:
+- `let posts: Post[] = []`
+- `let caseStudies: CaseStudy[] = []`
+
+---
+
 ## Verification Plan
 
 ### Local Testing
-1. Run `npm run dev` in `apps/web` — verify all pages render
+1. Run `npm run dev` in `apps/web` — verify all pages render ✓
 2. Run Sanity Studio locally — verify schemas work
-3. Test theme toggle (dark ↔ light)
+3. Test theme toggle (dark ↔ light) ✓
 4. Test contact form submission (Netlify CLI or deploy preview)
 5. Run Lighthouse audit — target 90+ on all metrics
 
 ### Post-Deploy Testing
 1. Verify all routes accessible
 2. Test contact form submissions arrive
-3. Validate sitemap.xml and robots.txt
+3. Validate sitemap.xml and robots.txt (sitemap currently disabled)
 4. Test RSS feed
 5. Verify OG images render correctly
 6. Test on mobile devices

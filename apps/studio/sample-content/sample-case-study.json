@@ -1,0 +1,489 @@
+{
+  "_type": "caseStudy",
+  "title": "Multi-Gateway Payment Integration Platform",
+  "slug": {
+    "_type": "slug",
+    "current": "payment-gateway-platform"
+  },
+  "summary": "Unified payment layer handling high-volume daily transactions across multiple providers.",
+  "problem": "Payment flows were fragmented across 5+ gateways with inconsistent error handling, no retry logic, and manual reconciliation taking hours daily. Transaction failures often went unnoticed until customer complaints arrived.",
+  "solution": "Built a unified payment abstraction layer with provider-agnostic interfaces, queue-based processing, automatic retries with exponential backoff, and real-time reconciliation against gateway settlement reports.",
+  "outcome": "Eliminated missed deposits, significantly improved uptime, and reduced daily reconciliation from hours to minutes.",
+  "impact": [
+    "Eliminated missed deposits",
+    "Significantly improved payment processing uptime",
+    "Reconciliation reduced from hours to minutes",
+    "Measurable reduction in failed transactions",
+    "New gateway integrations completed in days, not weeks"
+  ],
+  "stack": ["Node.js", "TypeScript", "RabbitMQ", "Redis", "MySQL", "Docker"],
+  "role": "Lead Engineer",
+  "featured": true,
+  "publishedAt": "2024-08-15T10:00:00Z",
+  "body": [
+    {
+      "_type": "block",
+      "_key": "intro1",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "When I joined the project, the payment system was a patchwork of direct API integrations. Each gateway had its own webhook handler, its own retry logic (or lack thereof), and its own way of reporting failures. The result? Missed deposits, angry customers, and a finance team spending half their day manually reconciling transactions."
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "h2-architecture",
+      "style": "h2",
+      "children": [
+        {
+          "_type": "span",
+          "text": "The Architecture"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "arch1",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "The core insight was to treat payment gateways as unreliable external services (because they are) and design accordingly. The architecture has three main layers:"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "list1",
+      "style": "normal",
+      "listItem": "number",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Gateway Abstraction Layer",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " - Unified interface for all payment operations"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "list2",
+      "style": "normal",
+      "listItem": "number",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Queue-Based Processing",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " - Async handling with guaranteed delivery"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "list3",
+      "style": "normal",
+      "listItem": "number",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Reconciliation Engine",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " - Automated verification against gateway records"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "h3-abstraction",
+      "style": "h3",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Gateway Abstraction Layer"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "abs1",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Every payment gateway implements a common interface. This makes swapping providers trivial and allows us to run A/B tests on gateway performance:"
+        }
+      ]
+    },
+    {
+      "_type": "codeBlock",
+      "_key": "code-interface",
+      "language": "typescript",
+      "filename": "types/gateway.ts",
+      "code": "interface PaymentGateway {\n  readonly providerId: string;\n  \n  // Core operations\n  createDeposit(params: DepositParams): Promise<DepositResult>;\n  createWithdrawal(params: WithdrawalParams): Promise<WithdrawalResult>;\n  getTransactionStatus(txId: string): Promise<TransactionStatus>;\n  \n  // Webhook handling\n  parseWebhook(payload: unknown): WebhookEvent;\n  verifySignature(payload: string, signature: string): boolean;\n  \n  // Health & monitoring\n  healthCheck(): Promise<HealthStatus>;\n}\n\ntype TransactionStatus = \n  | { status: 'pending'; estimatedCompletion?: Date }\n  | { status: 'completed'; completedAt: Date }\n  | { status: 'failed'; reason: string; retryable: boolean };",
+      "highlightLines": "4-6",
+      "showLineNumbers": true
+    },
+    {
+      "_type": "callout",
+      "_key": "callout-tip",
+      "tone": "info",
+      "title": "Design Decision",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "cb1",
+          "style": "normal",
+          "children": [
+            {
+              "_type": "span",
+              "text": "The "
+            },
+            {
+              "_type": "span",
+              "text": "retryable",
+              "marks": ["code"]
+            },
+            {
+              "_type": "span",
+              "text": " flag in the "
+            },
+            {
+              "_type": "span",
+              "text": "failed",
+              "marks": ["code"]
+            },
+            {
+              "_type": "span",
+              "text": " status is crucial. Some failures (insufficient funds) should never retry, while others (gateway timeout) should. Let the gateway implementation decide."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "abs2",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Here's a simplified implementation for one of our gateways:"
+        }
+      ]
+    },
+    {
+      "_type": "codeBlock",
+      "_key": "code-impl",
+      "language": "typescript",
+      "filename": "gateways/stripe.gateway.ts",
+      "code": "export class StripeGateway implements PaymentGateway {\n  readonly providerId = 'stripe';\n  private client: Stripe;\n\n  constructor(config: StripeConfig) {\n    this.client = new Stripe(config.secretKey, {\n      apiVersion: '2023-10-16',\n      timeout: 10000,\n      maxNetworkRetries: 0, // We handle retries ourselves\n    });\n  }\n\n  async createDeposit(params: DepositParams): Promise<DepositResult> {\n    const paymentIntent = await this.client.paymentIntents.create({\n      amount: params.amount,\n      currency: params.currency,\n      metadata: {\n        internalTxId: params.transactionId,\n        userId: params.userId,\n      },\n    });\n\n    return {\n      gatewayTxId: paymentIntent.id,\n      status: this.mapStatus(paymentIntent.status),\n      raw: paymentIntent,\n    };\n  }\n\n  async getTransactionStatus(txId: string): Promise<TransactionStatus> {\n    const intent = await this.client.paymentIntents.retrieve(txId);\n    return this.mapStatus(intent.status);\n  }\n\n  private mapStatus(stripeStatus: string): TransactionStatus {\n    switch (stripeStatus) {\n      case 'succeeded':\n        return { status: 'completed', completedAt: new Date() };\n      case 'processing':\n      case 'requires_action':\n        return { status: 'pending' };\n      default:\n        return { \n          status: 'failed', \n          reason: stripeStatus,\n          retryable: stripeStatus === 'requires_payment_method',\n        };\n    }\n  }\n}",
+      "highlightLines": "8-9,17-19",
+      "showLineNumbers": true
+    },
+    {
+      "_type": "divider",
+      "_key": "div1",
+      "style": "default"
+    },
+    {
+      "_type": "block",
+      "_key": "h3-queue",
+      "style": "h3",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Queue-Based Processing"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "queue1",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Direct API calls to payment gateways are a recipe for lost transactions. Network blips, gateway downtime, or even a slow database query can cause timeouts that leave transactions in an unknown state."
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "queue2",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Instead, every payment request goes through RabbitMQ with the following guarantees:"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "qlist1",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Messages are persisted to disk before acknowledgment"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "qlist2",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Failed messages go to a retry queue with exponential backoff"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "qlist3",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "After max retries, messages move to a dead letter queue for manual review"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "qlist4",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Idempotency keys prevent duplicate processing"
+        }
+      ]
+    },
+    {
+      "_type": "codeBlock",
+      "_key": "code-consumer",
+      "language": "typescript",
+      "filename": "workers/payment.consumer.ts",
+      "code": "async function processPaymentMessage(msg: PaymentMessage): Promise<void> {\n  const { transactionId, gatewayId, operation, params } = msg;\n  \n  // Check idempotency - have we already processed this?\n  const existing = await redis.get(`idem:${transactionId}`);\n  if (existing) {\n    logger.info('Skipping duplicate', { transactionId });\n    return;\n  }\n\n  const gateway = gatewayRegistry.get(gatewayId);\n  \n  try {\n    const result = await gateway[operation](params);\n    \n    // Store result with idempotency key (TTL: 7 days)\n    await redis.setex(\n      `idem:${transactionId}`,\n      7 * 24 * 60 * 60,\n      JSON.stringify(result)\n    );\n    \n    // Update transaction in database\n    await db.transactions.update(transactionId, {\n      status: result.status,\n      gatewayTxId: result.gatewayTxId,\n      processedAt: new Date(),\n    });\n    \n  } catch (error) {\n    if (isRetryableError(error)) {\n      throw error; // Let the queue retry\n    }\n    \n    // Non-retryable: mark as failed permanently\n    await db.transactions.update(transactionId, {\n      status: 'failed',\n      errorMessage: error.message,\n    });\n  }\n}",
+      "highlightLines": "4-9,16-21,31-33",
+      "showLineNumbers": true
+    },
+    {
+      "_type": "callout",
+      "_key": "callout-warning",
+      "tone": "warning",
+      "title": "Critical: Idempotency Before Gateway Call",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "cw1",
+          "style": "normal",
+          "children": [
+            {
+              "_type": "span",
+              "text": "You might wonder why we check idempotency "
+            },
+            {
+              "_type": "span",
+              "text": "before",
+              "marks": ["em"]
+            },
+            {
+              "_type": "span",
+              "text": " calling the gateway, not after. The reason: if the gateway call succeeds but we crash before storing the result, the retry would call the gateway again. Most gateways aren't idempotent by default."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_type": "divider",
+      "_key": "div2",
+      "style": "dots"
+    },
+    {
+      "_type": "block",
+      "_key": "h3-recon",
+      "style": "h3",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Automated Reconciliation"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "recon1",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Even with all these safeguards, discrepancies happen. A webhook might be delayed, a status might be misreported, or a gateway might have an outage during settlement. The reconciliation engine runs every hour and catches these cases:"
+        }
+      ]
+    },
+    {
+      "_type": "codeBlock",
+      "_key": "code-recon",
+      "language": "typescript",
+      "filename": "jobs/reconcile.job.ts",
+      "code": "async function reconcileGateway(gatewayId: string, date: Date) {\n  const gateway = gatewayRegistry.get(gatewayId);\n  \n  // Fetch our records\n  const ourTxns = await db.transactions.findByGatewayAndDate(\n    gatewayId, \n    date\n  );\n  \n  // Fetch gateway's records\n  const gatewayTxns = await gateway.getSettlementReport(date);\n  const gatewayIndex = new Map(\n    gatewayTxns.map(t => [t.id, t])\n  );\n  \n  const discrepancies: Discrepancy[] = [];\n  \n  for (const txn of ourTxns) {\n    const gatewayRecord = gatewayIndex.get(txn.gatewayTxId);\n    \n    if (!gatewayRecord) {\n      discrepancies.push({\n        type: 'MISSING_AT_GATEWAY',\n        transaction: txn,\n        severity: 'high',\n      });\n      continue;\n    }\n    \n    if (txn.status !== gatewayRecord.status) {\n      // Auto-fix if gateway shows success and we show pending\n      if (gatewayRecord.status === 'completed' && txn.status === 'pending') {\n        await db.transactions.update(txn.id, { \n          status: 'completed',\n          reconciledAt: new Date(),\n        });\n      } else {\n        discrepancies.push({\n          type: 'STATUS_MISMATCH',\n          ourStatus: txn.status,\n          gatewayStatus: gatewayRecord.status,\n        });\n      }\n    }\n  }\n  \n  if (discrepancies.length > 0) {\n    await alerting.notify('reconciliation-discrepancies', discrepancies);\n  }\n  \n  return { processed: ourTxns.length, discrepancies: discrepancies.length };\n}",
+      "highlightLines": "31-36",
+      "showLineNumbers": true
+    },
+    {
+      "_type": "callout",
+      "_key": "callout-success",
+      "tone": "success",
+      "title": "Auto-Healing in Action",
+      "body": [
+        {
+          "_type": "block",
+          "_key": "cs1",
+          "style": "normal",
+          "children": [
+            {
+              "_type": "span",
+              "text": "This reconciliation job has automatically fixed hundreds of transactions - deposits that would have been \"lost\" due to delayed webhooks or network issues. The finance team no longer spends hours hunting down missing transactions."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "h2-results",
+      "style": "h2",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Results & Lessons"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "res1",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Six months after launch, the numbers speak for themselves:"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "rlist1",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Zero",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " missed deposits (down from dozens per month)"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "rlist2",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "High uptime",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " even during gateway outages (failover to backup gateways)"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "rlist3",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Minutes",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " for daily reconciliation (down from hours)"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "rlist4",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Multiple new gateways",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " integrated in days rather than weeks"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "res2",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "The biggest lesson? "
+        },
+        {
+          "_type": "span",
+          "text": "Design for failure from day one.",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " Every external service will fail eventually. The question is whether your system gracefully handles it or loses customer money."
+        }
+      ]
+    }
+  ],
+  "seo": {
+    "metaTitle": "Payment Gateway Integration Case Study | Fahad Hussain",
+    "metaDescription": "How I built a unified payment platform with high uptime, automated reconciliation, and zero missed deposits."
+  }
+}

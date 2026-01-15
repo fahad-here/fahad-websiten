@@ -1,0 +1,203 @@
+---
+import CodeBlock from './CodeBlock.astro';
+import Callout from './Callout.astro';
+import Divider from './Divider.astro';
+import PortableImage from './PortableImage.astro';
+
+interface Props {
+  value: any[];
+  class?: string;
+}
+
+const { value, class: className = '' } = Astro.props;
+
+if (!value || !Array.isArray(value)) {
+  return null;
+}
+
+// Helper to escape HTML for safety
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Render marks (decorators and annotations)
+function renderMarks(text: string, marks: any[], markDefs: any[] = []): string {
+  if (!marks || marks.length === 0) return escapeHtml(text);
+
+  let result = escapeHtml(text);
+
+  for (const mark of marks) {
+    // Handle annotations (like links)
+    const markDef = markDefs.find((def) => def._key === mark);
+    if (markDef) {
+      if (markDef._type === 'link') {
+        const href = markDef.href || '';
+        const isExternal = href.startsWith('http') || href.startsWith('mailto:');
+        const attrs = isExternal
+          ? `href="${href}" target="_blank" rel="noopener noreferrer"`
+          : `href="${href}"`;
+        result = `<a ${attrs} class="text-primary hover:underline">${result}</a>`;
+      }
+    } else {
+      // Handle decorators
+      switch (mark) {
+        case 'strong':
+          result = `<strong class="font-semibold">${result}</strong>`;
+          break;
+        case 'em':
+          result = `<em>${result}</em>`;
+          break;
+        case 'code':
+          result = `<code class="bg-panel-2 px-1.5 py-0.5 rounded font-mono text-sm text-primary">${result}</code>`;
+          break;
+        case 'strike':
+          result = `<del class="text-muted">${result}</del>`;
+          break;
+      }
+    }
+  }
+
+  return result;
+}
+
+// Render children spans
+function renderChildren(children: any[], markDefs: any[] = []): string {
+  if (!children) return '';
+
+  return children
+    .map((child) => {
+      if (child._type === 'span') {
+        return renderMarks(child.text || '', child.marks || [], markDefs);
+      }
+      return '';
+    })
+    .join('');
+}
+
+// Render a block
+function renderBlock(block: any): string {
+  const style = block.style || 'normal';
+  const children = renderChildren(block.children, block.markDefs);
+
+  switch (style) {
+    case 'h2':
+      return `<h2 class="text-2xl font-bold text-text mt-12 mb-4" id="${generateHeadingId(block)}">${children}</h2>`;
+    case 'h3':
+      return `<h3 class="text-xl font-bold text-text mt-10 mb-3" id="${generateHeadingId(block)}">${children}</h3>`;
+    case 'h4':
+      return `<h4 class="text-lg font-semibold text-text mt-8 mb-3" id="${generateHeadingId(block)}">${children}</h4>`;
+    case 'blockquote':
+      return `<blockquote class="border-l-4 border-primary pl-4 py-2 my-6 italic text-muted">${children}</blockquote>`;
+    default:
+      return `<p class="mb-4 leading-relaxed text-text-2">${children}</p>`;
+  }
+}
+
+// Generate heading IDs for table of contents
+function generateHeadingId(block: any): string {
+  const text = block.children
+    ?.map((child: any) => child.text || '')
+    .join('')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+  return text || block._key || '';
+}
+
+// Group consecutive list items
+function groupListItems(blocks: any[]): any[] {
+  const grouped: any[] = [];
+  let currentList: any[] | null = null;
+  let currentListType: string | null = null;
+
+  for (const block of blocks) {
+    if (block.listItem) {
+      if (currentListType === block.listItem) {
+        currentList!.push(block);
+      } else {
+        if (currentList) {
+          grouped.push({ type: 'list', listType: currentListType, items: currentList });
+        }
+        currentList = [block];
+        currentListType = block.listItem;
+      }
+    } else {
+      if (currentList) {
+        grouped.push({ type: 'list', listType: currentListType, items: currentList });
+        currentList = null;
+        currentListType = null;
+      }
+      grouped.push(block);
+    }
+  }
+
+  if (currentList) {
+    grouped.push({ type: 'list', listType: currentListType, items: currentList });
+  }
+
+  return grouped;
+}
+
+// Render a list
+function renderList(listType: string, items: any[]): string {
+  const listClass = listType === 'number' ? 'list-decimal' : 'list-disc';
+  const listItems = items
+    .map((item) => {
+      const content = renderChildren(item.children, item.markDefs);
+      return `<li class="leading-relaxed">${content}</li>`;
+    })
+    .join('');
+
+  return `<${listType === 'number' ? 'ol' : 'ul'} class="${listClass} list-inside mb-4 space-y-2 text-text-2 ml-4">${listItems}</${listType === 'number' ? 'ol' : 'ul'}>`;
+}
+
+// Process all blocks
+const groupedBlocks = groupListItems(value);
+---
+
+<div class={`portable-text ${className}`}>
+  {groupedBlocks.map((item) => {
+    // Handle grouped lists
+    if (item.type === 'list') {
+      return <Fragment set:html={renderList(item.listType, item.items)} />;
+    }
+
+    // Handle custom block types
+    if (item._type === 'codeBlock') {
+      return (
+        <CodeBlock
+          code={item.code}
+          language={item.language}
+          filename={item.filename}
+          highlightLines={item.highlightLines}
+          showLineNumbers={item.showLineNumbers !== false}
+        />
+      );
+    }
+
+    if (item._type === 'callout') {
+      return <Callout tone={item.tone} title={item.title} body={item.body} />;
+    }
+
+    if (item._type === 'divider') {
+      return <Divider style={item.style} />;
+    }
+
+    if (item._type === 'image') {
+      return <PortableImage value={item} />;
+    }
+
+    // Handle standard blocks
+    if (item._type === 'block') {
+      return <Fragment set:html={renderBlock(item)} />;
+    }
+
+    // Fallback for unknown types
+    return null;
+  })}
+</div>

@@ -27,6 +27,8 @@ export interface Post {
   readingTime?: number;
   body: any[]; // Portable Text
   seo?: SEO;
+  views?: number;
+  likes?: number;
 }
 
 export interface CaseStudy {
@@ -46,6 +48,8 @@ export interface CaseStudy {
   featured: boolean;
   publishedAt: string;
   seo?: SEO;
+  views?: number;
+  likes?: number;
 }
 
 export interface SocialLinks {

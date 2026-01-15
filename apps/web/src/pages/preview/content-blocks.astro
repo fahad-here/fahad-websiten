@@ -1,0 +1,444 @@
+---
+/**
+ * Preview page for Portable Text components
+ * This page demonstrates all the custom blocks without needing Sanity content
+ */
+
+import BaseLayout from '../../components/layout/BaseLayout.astro';
+import Container from '../../components/ui/Container.astro';
+import Badge from '../../components/ui/Badge.astro';
+import PortableText from '../../components/portable-text/PortableText.astro';
+
+// Sample portable text content demonstrating all features
+const sampleContent = [
+  {
+    _type: 'block',
+    _key: 'intro',
+    style: 'normal',
+    children: [
+      { _type: 'span', text: 'This is a preview of the ' },
+      { _type: 'span', text: 'Portable Text', marks: ['strong'] },
+      { _type: 'span', text: ' rendering system. It supports ' },
+      { _type: 'span', text: 'rich text formatting', marks: ['em'] },
+      { _type: 'span', text: ', ' },
+      { _type: 'span', text: 'inline code', marks: ['code'] },
+      { _type: 'span', text: ', and ' },
+      {
+        _type: 'span',
+        text: 'links',
+        marks: ['link1'],
+      },
+      { _type: 'span', text: '.' },
+    ],
+    markDefs: [
+      { _key: 'link1', _type: 'link', href: 'https://example.com' },
+    ],
+  },
+  {
+    _type: 'block',
+    _key: 'h2-1',
+    style: 'h2',
+    children: [{ _type: 'span', text: 'Code Blocks with Syntax Highlighting' }],
+  },
+  {
+    _type: 'block',
+    _key: 'code-intro',
+    style: 'normal',
+    children: [
+      {
+        _type: 'span',
+        text: 'Code blocks use Shiki for syntax highlighting with support for filename display, language labels, and line highlighting:',
+      },
+    ],
+  },
+  {
+    _type: 'codeBlock',
+    _key: 'code-1',
+    language: 'typescript',
+    filename: 'example.ts',
+    code: `interface User {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+}
+
+async function getUser(id: string): Promise<User | null> {
+  const user = await db.users.findUnique({
+    where: { id },
+  });
+  return user;
+}`,
+    highlightLines: '1-5,8',
+  },
+  {
+    _type: 'block',
+    _key: 'python-intro',
+    style: 'normal',
+    children: [
+      { _type: 'span', text: 'Multiple languages are supported:' },
+    ],
+  },
+  {
+    _type: 'codeBlock',
+    _key: 'code-2',
+    language: 'python',
+    code: `from typing import Optional
+from dataclasses import dataclass
+
+@dataclass
+class PaymentResult:
+    success: bool
+    transaction_id: Optional[str]
+    error_message: Optional[str]
+
+def process_payment(amount: float, currency: str) -> PaymentResult:
+    # Payment processing logic here
+    return PaymentResult(success=True, transaction_id="txn_123", error_message=None)`,
+    highlightLines: '4-8,11',
+  },
+  {
+    _type: 'block',
+    _key: 'code-nolines',
+    style: 'normal',
+    children: [
+      { _type: 'span', text: 'Code blocks can hide line numbers:' },
+    ],
+  },
+  {
+    _type: 'codeBlock',
+    _key: 'code-3',
+    language: 'bash',
+    filename: 'terminal',
+    code: `npm install @sanity/client
+npm run dev`,
+    showLineNumbers: false,
+  },
+  {
+    _type: 'block',
+    _key: 'code-multirange',
+    style: 'normal',
+    children: [
+      { _type: 'span', text: 'Multiple highlight ranges (3-5, 8, 10-12):' },
+    ],
+  },
+  {
+    _type: 'codeBlock',
+    _key: 'code-4',
+    language: 'javascript',
+    code: `// Line 1
+// Line 2
+const a = 1;  // Highlighted
+const b = 2;  // Highlighted
+const c = 3;  // Highlighted
+// Line 6
+// Line 7
+const d = 4;  // Highlighted
+// Line 9
+const e = 5;  // Highlighted
+const f = 6;  // Highlighted
+const g = 7;  // Highlighted
+// Line 13`,
+    highlightLines: '3-5,8,10-12',
+  },
+  {
+    _type: 'block',
+    _key: 'h2-2',
+    style: 'h2',
+    children: [{ _type: 'span', text: 'Callout Blocks' }],
+  },
+  {
+    _type: 'block',
+    _key: 'callout-intro',
+    style: 'normal',
+    children: [
+      {
+        _type: 'span',
+        text: 'Callouts support four tones: info, success, warning, and danger:',
+      },
+    ],
+  },
+  {
+    _type: 'callout',
+    _key: 'callout-info',
+    tone: 'info',
+    title: 'Note',
+    body: [
+      {
+        _type: 'block',
+        _key: 'ci1',
+        style: 'normal',
+        children: [
+          { _type: 'span', text: 'This is an informational callout with ' },
+          { _type: 'span', text: 'Portable Text', marks: ['strong'] },
+          { _type: 'span', text: ' body. It supports ' },
+          { _type: 'span', text: 'inline code', marks: ['code'] },
+          { _type: 'span', text: ', ' },
+          { _type: 'span', text: 'emphasis', marks: ['em'] },
+          { _type: 'span', text: ', and ' },
+          { _type: 'span', text: 'links', marks: ['callout-link'] },
+          { _type: 'span', text: '.' },
+        ],
+        markDefs: [
+          { _key: 'callout-link', _type: 'link', href: 'https://example.com' },
+        ],
+      },
+    ],
+  },
+  {
+    _type: 'callout',
+    _key: 'callout-success',
+    tone: 'success',
+    title: 'Success',
+    body: [
+      {
+        _type: 'block',
+        _key: 'cs1',
+        style: 'normal',
+        children: [
+          { _type: 'span', text: 'Use the ' },
+          { _type: 'span', text: 'retryable', marks: ['code'] },
+          { _type: 'span', text: ' flag to determine if a failed operation can be retried. This prevents infinite loops on permanent failures.' },
+        ],
+      },
+    ],
+  },
+  {
+    _type: 'callout',
+    _key: 'callout-warning',
+    tone: 'warning',
+    title: 'Warning',
+    body: 'This is a legacy string-based callout body for backward compatibility testing. It still renders correctly!',
+  },
+  {
+    _type: 'callout',
+    _key: 'callout-danger',
+    tone: 'danger',
+    title: 'Breaking Change',
+    body: [
+      {
+        _type: 'block',
+        _key: 'cd1',
+        style: 'normal',
+        children: [
+          { _type: 'span', text: 'The ' },
+          { _type: 'span', text: 'oldMethod()', marks: ['code'] },
+          { _type: 'span', text: ' has been deprecated. Migrate to:' },
+        ],
+      },
+      {
+        _type: 'block',
+        _key: 'cd2',
+        style: 'normal',
+        listItem: 'bullet',
+        children: [
+          { _type: 'span', text: 'newMethod()', marks: ['code'] },
+          { _type: 'span', text: ' for sync operations' },
+        ],
+      },
+      {
+        _type: 'block',
+        _key: 'cd3',
+        style: 'normal',
+        listItem: 'bullet',
+        children: [
+          { _type: 'span', text: 'newMethodAsync()', marks: ['code'] },
+          { _type: 'span', text: ' for async operations' },
+        ],
+      },
+    ],
+  },
+  {
+    _type: 'block',
+    _key: 'h2-3',
+    style: 'h2',
+    children: [{ _type: 'span', text: 'Lists and Blockquotes' }],
+  },
+  {
+    _type: 'block',
+    _key: 'list-intro',
+    style: 'normal',
+    children: [
+      { _type: 'span', text: 'Bullet lists:' },
+    ],
+  },
+  {
+    _type: 'block',
+    _key: 'bullet-1',
+    style: 'normal',
+    listItem: 'bullet',
+    children: [
+      { _type: 'span', text: 'First item with ', marks: [] },
+      { _type: 'span', text: 'bold text', marks: ['strong'] },
+    ],
+  },
+  {
+    _type: 'block',
+    _key: 'bullet-2',
+    style: 'normal',
+    listItem: 'bullet',
+    children: [
+      { _type: 'span', text: 'Second item with ' },
+      { _type: 'span', text: 'inline code', marks: ['code'] },
+    ],
+  },
+  {
+    _type: 'block',
+    _key: 'bullet-3',
+    style: 'normal',
+    listItem: 'bullet',
+    children: [{ _type: 'span', text: 'Third item' }],
+  },
+  {
+    _type: 'block',
+    _key: 'num-intro',
+    style: 'normal',
+    children: [
+      { _type: 'span', text: 'Numbered lists:' },
+    ],
+  },
+  {
+    _type: 'block',
+    _key: 'number-1',
+    style: 'normal',
+    listItem: 'number',
+    children: [{ _type: 'span', text: 'Step one' }],
+  },
+  {
+    _type: 'block',
+    _key: 'number-2',
+    style: 'normal',
+    listItem: 'number',
+    children: [{ _type: 'span', text: 'Step two' }],
+  },
+  {
+    _type: 'block',
+    _key: 'number-3',
+    style: 'normal',
+    listItem: 'number',
+    children: [{ _type: 'span', text: 'Step three' }],
+  },
+  {
+    _type: 'block',
+    _key: 'quote',
+    style: 'blockquote',
+    children: [
+      {
+        _type: 'span',
+        text: 'Any sufficiently advanced technology is indistinguishable from magic.',
+      },
+    ],
+  },
+  {
+    _type: 'block',
+    _key: 'h2-4',
+    style: 'h2',
+    children: [{ _type: 'span', text: 'Dividers' }],
+  },
+  {
+    _type: 'block',
+    _key: 'div-intro',
+    style: 'normal',
+    children: [
+      { _type: 'span', text: 'Dividers help separate sections. Default style:' },
+    ],
+  },
+  {
+    _type: 'divider',
+    _key: 'divider-1',
+    style: 'default',
+  },
+  {
+    _type: 'block',
+    _key: 'div-dots',
+    style: 'normal',
+    children: [
+      { _type: 'span', text: 'Dots style:' },
+    ],
+  },
+  {
+    _type: 'divider',
+    _key: 'divider-2',
+    style: 'dots',
+  },
+  {
+    _type: 'block',
+    _key: 'div-space',
+    style: 'normal',
+    children: [
+      { _type: 'span', text: 'Space style (just vertical spacing):' },
+    ],
+  },
+  {
+    _type: 'divider',
+    _key: 'divider-3',
+    style: 'space',
+  },
+  {
+    _type: 'block',
+    _key: 'h3-1',
+    style: 'h3',
+    children: [{ _type: 'span', text: 'H3 Subheading Example' }],
+  },
+  {
+    _type: 'block',
+    _key: 'para-final',
+    style: 'normal',
+    children: [
+      {
+        _type: 'span',
+        text: 'This preview page demonstrates all the Portable Text components. In production, content will come from Sanity CMS.',
+      },
+    ],
+  },
+  {
+    _type: 'block',
+    _key: 'h4-1',
+    style: 'h4',
+    children: [{ _type: 'span', text: 'H4 Subheading Example' }],
+  },
+  {
+    _type: 'block',
+    _key: 'final',
+    style: 'normal',
+    children: [
+      {
+        _type: 'span',
+        text: 'That concludes our preview of the Portable Text rendering system!',
+      },
+    ],
+  },
+];
+---
+
+<BaseLayout title="Portable Text Preview" description="Preview of all Portable Text components">
+  <article class="py-24">
+    <Container>
+      <div class="max-w-3xl mx-auto">
+        <a href="/" class="inline-flex items-center text-muted hover:text-accent transition-colors mb-8 no-underline">
+          <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Home
+        </a>
+
+        <header class="mb-12">
+          <div class="flex flex-wrap gap-2 mb-4">
+            <Badge variant="accent">Preview</Badge>
+            <Badge>Components</Badge>
+          </div>
+          <h1 class="text-4xl md:text-5xl font-bold text-text mb-6 leading-tight">
+            Portable Text Component Preview
+          </h1>
+          <p class="text-xl text-muted">
+            A demonstration of all custom Portable Text blocks including code blocks, callouts, and dividers.
+          </p>
+        </header>
+
+        <div class="article-content">
+          <PortableText value={sampleContent} />
+        </div>
+      </div>
+    </Container>
+  </article>
+</BaseLayout>

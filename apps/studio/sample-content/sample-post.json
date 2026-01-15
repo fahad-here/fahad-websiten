@@ -1,0 +1,387 @@
+{
+  "_type": "post",
+  "title": "Designing Payment Systems That Don't Lose Money",
+  "slug": {
+    "_type": "slug",
+    "current": "designing-payment-systems"
+  },
+  "excerpt": "Lessons from building transaction processing systems with proper idempotency, reconciliation, and failure handling.",
+  "publishedAt": "2025-01-15T10:00:00Z",
+  "author": "Fahad Hussain",
+  "categories": ["Payments", "Architecture", "Backend"],
+  "readingTime": 12,
+  "body": [
+    {
+      "_type": "block",
+      "_key": "intro1",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "After years of building payment systems for fintech companies, I've learned that the difference between a system that works and one that "
+        },
+        {
+          "_type": "span",
+          "text": "actually works",
+          "marks": ["em"]
+        },
+        {
+          "_type": "span",
+          "text": " in production comes down to handling edge cases that happen rarely—but when they do, they cost real money."
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "h2-idempotency",
+      "style": "h2",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Idempotency: The Foundation of Safe Payments"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "para1",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Every payment operation must be idempotent. This means if a request is retried—whether due to network timeout, client crash, or load balancer hiccup—the system produces the same result as if it was called once."
+        }
+      ]
+    },
+    {
+      "_type": "callout",
+      "_key": "callout-warning",
+      "tone": "warning",
+      "title": "Common Mistake",
+      "body": "Many developers assume database transactions handle idempotency. They don't. If your transaction commits but the response never reaches the client, the client will retry—and you'll process the payment twice."
+    },
+    {
+      "_type": "block",
+      "_key": "para2",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "The solution is to use an "
+        },
+        {
+          "_type": "span",
+          "text": "idempotency key",
+          "marks": ["code"]
+        },
+        {
+          "_type": "span",
+          "text": " provided by the client, and store the result of each operation keyed by this value:"
+        }
+      ]
+    },
+    {
+      "_type": "codeBlock",
+      "_key": "code-idempotency",
+      "language": "typescript",
+      "filename": "services/payment.service.ts",
+      "code": "async function processPayment(\n  request: PaymentRequest,\n  idempotencyKey: string\n): Promise<PaymentResult> {\n  // Check if we've already processed this request\n  const existing = await idempotencyStore.get(idempotencyKey);\n  if (existing) {\n    return existing.result;\n  }\n\n  // Process the payment\n  const result = await executePayment(request);\n\n  // Store the result with the idempotency key\n  await idempotencyStore.set(idempotencyKey, {\n    result,\n    processedAt: new Date(),\n    expiresAt: addDays(new Date(), 7),\n  });\n\n  return result;\n}",
+      "highlightLines": "3-7"
+    },
+    {
+      "_type": "block",
+      "_key": "h3-key-generation",
+      "style": "h3",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Generating Idempotency Keys"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "para3",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "The client should generate a unique key that represents the intent of the operation. A common pattern is to hash the operation parameters:"
+        }
+      ]
+    },
+    {
+      "_type": "codeBlock",
+      "_key": "code-keygen",
+      "language": "typescript",
+      "code": "function generateIdempotencyKey(params: {\n  userId: string;\n  amount: number;\n  currency: string;\n  merchantId: string;\n}): string {\n  const payload = JSON.stringify(params);\n  return crypto.createHash('sha256').update(payload).digest('hex');\n}"
+    },
+    {
+      "_type": "divider",
+      "_key": "divider1",
+      "style": "default"
+    },
+    {
+      "_type": "block",
+      "_key": "h2-reconciliation",
+      "style": "h2",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Reconciliation: Trust, but Verify"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "para4",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Payment gateways will fail. Webhooks will be delayed. Your database and the gateway's database will disagree about the state of a transaction. This is normal."
+        }
+      ]
+    },
+    {
+      "_type": "callout",
+      "_key": "callout-info",
+      "tone": "info",
+      "body": "In my experience, 0.1-0.5% of transactions will have some discrepancy between your system and the payment provider. At scale, that's thousands of transactions per day that need automatic resolution."
+    },
+    {
+      "_type": "block",
+      "_key": "para5",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Build a reconciliation system that runs periodically and compares your transaction records with the gateway's:"
+        }
+      ]
+    },
+    {
+      "_type": "codeBlock",
+      "_key": "code-reconcile",
+      "language": "python",
+      "filename": "jobs/reconcile.py",
+      "code": "async def reconcile_transactions(date: datetime.date):\n    \"\"\"Compare local transactions with gateway records.\"\"\"\n    \n    # Fetch all transactions for the date\n    local_txns = await db.get_transactions(date)\n    gateway_txns = await gateway.fetch_settlements(date)\n    \n    # Index by transaction ID\n    gateway_index = {t.id: t for t in gateway_txns}\n    \n    discrepancies = []\n    for txn in local_txns:\n        gateway_record = gateway_index.get(txn.gateway_id)\n        \n        if not gateway_record:\n            discrepancies.append({\n                'type': 'MISSING_AT_GATEWAY',\n                'transaction': txn,\n            })\n        elif txn.amount != gateway_record.amount:\n            discrepancies.append({\n                'type': 'AMOUNT_MISMATCH',\n                'local': txn.amount,\n                'gateway': gateway_record.amount,\n            })\n    \n    return discrepancies",
+      "highlightLines": "10-14,16-19"
+    },
+    {
+      "_type": "block",
+      "_key": "h2-failure",
+      "style": "h2",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Handling Failures Gracefully"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "para6",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Payment failures come in many flavors, and each requires different handling:"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "list1",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Insufficient funds",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " - Notify the user, don't retry"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "list2",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Gateway timeout",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " - Query transaction status before retrying"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "list3",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Rate limited",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " - Exponential backoff with jitter"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "list4",
+      "style": "normal",
+      "listItem": "bullet",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Gateway down",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " - Queue for later, switch to backup gateway"
+        }
+      ]
+    },
+    {
+      "_type": "callout",
+      "_key": "callout-success",
+      "tone": "success",
+      "title": "Key Insight",
+      "body": "Never assume a timeout means failure. The payment might have succeeded. Always check the transaction status with the gateway before deciding whether to retry."
+    },
+    {
+      "_type": "block",
+      "_key": "h3-circuit",
+      "style": "h3",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Circuit Breakers for Gateway Failures"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "para7",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "When a payment gateway starts failing, you don't want to keep hammering it. Implement a circuit breaker that opens after a threshold of failures:"
+        }
+      ]
+    },
+    {
+      "_type": "codeBlock",
+      "_key": "code-circuit",
+      "language": "typescript",
+      "filename": "utils/circuit-breaker.ts",
+      "code": "class CircuitBreaker {\n  private failures = 0;\n  private lastFailure: Date | null = null;\n  private state: 'closed' | 'open' | 'half-open' = 'closed';\n\n  constructor(\n    private threshold: number = 5,\n    private timeout: number = 30000\n  ) {}\n\n  async execute<T>(fn: () => Promise<T>): Promise<T> {\n    if (this.state === 'open') {\n      if (Date.now() - this.lastFailure!.getTime() > this.timeout) {\n        this.state = 'half-open';\n      } else {\n        throw new CircuitOpenError();\n      }\n    }\n\n    try {\n      const result = await fn();\n      this.onSuccess();\n      return result;\n    } catch (error) {\n      this.onFailure();\n      throw error;\n    }\n  }\n\n  private onSuccess() {\n    this.failures = 0;\n    this.state = 'closed';\n  }\n\n  private onFailure() {\n    this.failures++;\n    this.lastFailure = new Date();\n    if (this.failures >= this.threshold) {\n      this.state = 'open';\n    }\n  }\n}"
+    },
+    {
+      "_type": "divider",
+      "_key": "divider2",
+      "style": "dots"
+    },
+    {
+      "_type": "block",
+      "_key": "h2-conclusion",
+      "style": "h2",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Wrapping Up"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "conclusion",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Building reliable payment systems is about anticipating failure modes and having a clear strategy for each. The three pillars are:"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "wrap1",
+      "style": "normal",
+      "listItem": "number",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Idempotency",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " - Ensure safe retries at every layer"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "wrap2",
+      "style": "normal",
+      "listItem": "number",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Reconciliation",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " - Verify your state matches reality"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "wrap3",
+      "style": "normal",
+      "listItem": "number",
+      "children": [
+        {
+          "_type": "span",
+          "text": "Graceful degradation",
+          "marks": ["strong"]
+        },
+        {
+          "_type": "span",
+          "text": " - Handle failures without losing money or trust"
+        }
+      ]
+    },
+    {
+      "_type": "block",
+      "_key": "final",
+      "style": "normal",
+      "children": [
+        {
+          "_type": "span",
+          "text": "These patterns have saved me countless hours of debugging and prevented real financial losses. Invest the time upfront—your future self (and your finance team) will thank you."
+        }
+      ]
+    }
+  ]
+}

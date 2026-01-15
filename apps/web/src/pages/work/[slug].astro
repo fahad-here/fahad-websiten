@@ -3,10 +3,10 @@ import BaseLayout from '../../components/layout/BaseLayout.astro';
 import Container from '../../components/ui/Container.astro';
 import Badge from '../../components/ui/Badge.astro';
 import Button from '../../components/ui/Button.astro';
+import MetricsBar from '../../components/ui/MetricsBar.astro';
+import PortableText from '../../components/portable-text/PortableText.astro';
 import { getAllCaseStudies, getCaseStudyBySlug } from '../../lib/sanity';
 import { getImageUrl } from '../../lib/image';
-import { renderPortableText } from '../../lib/portable-text';
-import type { CaseStudy } from '../../types';
 
 export async function getStaticPaths() {
   const caseStudies = await getAllCaseStudies();
@@ -25,6 +25,27 @@ if (!caseStudy) {
 const imageUrl = getImageUrl(caseStudy.coverImage, { width: 1200, height: 600 });
 const seoTitle = caseStudy.seo?.metaTitle || caseStudy.title;
 const seoDescription = caseStudy.seo?.metaDescription || caseStudy.summary;
+
+// JSON-LD for Article (case study)
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: caseStudy.title,
+  description: caseStudy.summary,
+  author: {
+    '@type': 'Person',
+    name: 'Fahad Hussain',
+    jobTitle: 'Lead Software Engineer',
+  },
+  datePublished: caseStudy.publishedAt,
+  image: imageUrl,
+  keywords: caseStudy.stack?.join(', '),
+  about: {
+    '@type': 'Thing',
+    name: 'Software Engineering Case Study',
+    description: caseStudy.problem,
+  },
+};
 ---
 
 <BaseLayout
@@ -33,6 +54,8 @@ const seoDescription = caseStudy.seo?.metaDescription || caseStudy.summary;
   ogImage={imageUrl || undefined}
   type="article"
 >
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
   <article class="py-24">
     <Container>
       <!-- Header -->
@@ -53,6 +76,13 @@ const seoDescription = caseStudy.seo?.metaDescription || caseStudy.summary;
               <span class="text-text font-medium">Role:</span> {caseStudy.role}
             </span>
           )}
+          <span class="text-border">|</span>
+          <MetricsBar
+            type="caseStudy"
+            slug={slug as string}
+            initialViews={caseStudy.views || 0}
+            initialLikes={caseStudy.likes || 0}
+          />
         </div>
       </div>
 
@@ -68,9 +98,9 @@ const seoDescription = caseStudy.seo?.metaDescription || caseStudy.summary;
       )}
 
       <!-- Content Grid -->
-      <div class="grid lg:grid-cols-3 gap-12">
+      <div class="grid lg:grid-cols-3 gap-12 min-w-0">
         <!-- Main Content -->
-        <div class="lg:col-span-2 space-y-12">
+        <div class="lg:col-span-2 space-y-12 min-w-0">
           <!-- Problem -->
           <section>
             <h2 class="text-2xl font-bold text-text mb-4">The Challenge</h2>
@@ -83,16 +113,19 @@ const seoDescription = caseStudy.seo?.metaDescription || caseStudy.summary;
             <p class="text-muted leading-relaxed">{caseStudy.solution}</p>
           </section>
 
-          <!-- Extended Body -->
+          <!-- Deep Dive / Extended Content -->
           {caseStudy.body && caseStudy.body.length > 0 && (
-            <section class="prose prose-invert max-w-none">
-              <Fragment set:html={renderPortableText(caseStudy.body)} />
+            <section>
+              <h2 class="text-2xl font-bold text-text mb-6">Deep Dive</h2>
+              <div class="article-content">
+                <PortableText value={caseStudy.body} />
+              </div>
             </section>
           )}
         </div>
 
         <!-- Sidebar -->
-        <aside class="space-y-8">
+        <aside class="space-y-8 min-w-0">
           <!-- Impact -->
           <div class="bg-panel border border-border rounded-lg p-6">
             <h3 class="text-lg font-semibold text-text mb-4">Impact</h3>

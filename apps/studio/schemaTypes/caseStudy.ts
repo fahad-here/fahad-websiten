@@ -106,52 +106,9 @@ export default defineType({
     }),
     defineField({
       name: 'body',
-      title: 'Extended Content',
-      type: 'array',
-      description: 'Optional detailed write-up',
-      of: [
-        {
-          type: 'block',
-          styles: [
-            { title: 'Normal', value: 'normal' },
-            { title: 'H2', value: 'h2' },
-            { title: 'H3', value: 'h3' },
-            { title: 'Quote', value: 'blockquote' },
-          ],
-          marks: {
-            decorators: [
-              { title: 'Strong', value: 'strong' },
-              { title: 'Emphasis', value: 'em' },
-              { title: 'Code', value: 'code' },
-            ],
-            annotations: [
-              {
-                title: 'URL',
-                name: 'link',
-                type: 'object',
-                fields: [
-                  {
-                    title: 'URL',
-                    name: 'href',
-                    type: 'url',
-                  },
-                ],
-              },
-            ],
-          },
-        },
-        {
-          type: 'image',
-          options: { hotspot: true },
-          fields: [
-            {
-              name: 'alt',
-              type: 'string',
-              title: 'Alternative Text',
-            },
-          ],
-        },
-      ],
+      title: 'Deep Dive',
+      type: 'richContent',
+      description: 'Optional detailed technical write-up with code examples',
     }),
     defineField({
       name: 'seo',
@@ -180,6 +137,22 @@ export default defineType({
           type: 'url',
         },
       ],
+    }),
+    defineField({
+      name: 'views',
+      title: 'Views',
+      type: 'number',
+      initialValue: 0,
+      readOnly: true,
+      description: 'View count (updated automatically)',
+    }),
+    defineField({
+      name: 'likes',
+      title: 'Likes',
+      type: 'number',
+      initialValue: 0,
+      readOnly: true,
+      description: 'Like count (updated automatically)',
     }),
   ],
   preview: {

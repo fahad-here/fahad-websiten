@@ -1,0 +1,193 @@
+---
+interface Props {
+  tone?: 'info' | 'success' | 'warning' | 'danger';
+  title?: string;
+  body: any[] | string; // Support both Portable Text array and legacy plain text
+}
+
+const { tone = 'info', title, body } = Astro.props;
+
+// Helper to escape HTML
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Render marks for callout content
+function renderCalloutMarks(text: string, marks: any[], markDefs: any[] = []): string {
+  if (!marks || marks.length === 0) return escapeHtml(text);
+
+  let result = escapeHtml(text);
+
+  for (const mark of marks) {
+    const markDef = markDefs.find((def) => def._key === mark);
+    if (markDef) {
+      if (markDef._type === 'link') {
+        const href = markDef.href || '';
+        const isExternal = href.startsWith('http') || href.startsWith('mailto:');
+        const attrs = isExternal
+          ? `href="${href}" target="_blank" rel="noopener noreferrer"`
+          : `href="${href}"`;
+        result = `<a ${attrs} class="text-inherit underline underline-offset-2">${result}</a>`;
+      }
+    } else {
+      switch (mark) {
+        case 'strong':
+          result = `<strong class="font-semibold">${result}</strong>`;
+          break;
+        case 'em':
+          result = `<em>${result}</em>`;
+          break;
+        case 'code':
+          result = `<code class="bg-black/10 dark:bg-white/10 px-1 py-0.5 rounded font-mono text-xs">${result}</code>`;
+          break;
+      }
+    }
+  }
+
+  return result;
+}
+
+// Render children spans
+function renderCalloutChildren(children: any[], markDefs: any[] = []): string {
+  if (!children) return '';
+  return children
+    .map((child) => {
+      if (child._type === 'span') {
+        return renderCalloutMarks(child.text || '', child.marks || [], markDefs);
+      }
+      return '';
+    })
+    .join('');
+}
+
+// Render Portable Text body for callouts
+function renderCalloutBody(value: any[]): string {
+  if (!value || !Array.isArray(value)) return '';
+
+  // Group list items
+  const grouped: any[] = [];
+  let currentList: any[] | null = null;
+  let currentListType: string | null = null;
+
+  for (const block of value) {
+    if (block.listItem) {
+      if (currentListType === block.listItem) {
+        currentList!.push(block);
+      } else {
+        if (currentList) {
+          grouped.push({ type: 'list', listType: currentListType, items: currentList });
+        }
+        currentList = [block];
+        currentListType = block.listItem;
+      }
+    } else {
+      if (currentList) {
+        grouped.push({ type: 'list', listType: currentListType, items: currentList });
+        currentList = null;
+        currentListType = null;
+      }
+      grouped.push(block);
+    }
+  }
+
+  if (currentList) {
+    grouped.push({ type: 'list', listType: currentListType, items: currentList });
+  }
+
+  return grouped
+    .map((item) => {
+      if (item.type === 'list') {
+        const listTag = item.listType === 'number' ? 'ol' : 'ul';
+        const listClass = item.listType === 'number' ? 'list-decimal' : 'list-disc';
+        const listItems = item.items
+          .map((li: any) => `<li>${renderCalloutChildren(li.children, li.markDefs)}</li>`)
+          .join('');
+        return `<${listTag} class="${listClass} list-inside space-y-1 mt-2">${listItems}</${listTag}>`;
+      }
+
+      if (item._type === 'block') {
+        const content = renderCalloutChildren(item.children, item.markDefs);
+        return `<p>${content}</p>`;
+      }
+
+      return '';
+    })
+    .join('');
+}
+
+// Handle both string (legacy) and Portable Text array
+const renderedBody =
+  typeof body === 'string' ? escapeHtml(body) : renderCalloutBody(body);
+
+// Tone configuration with icons, colors, and default titles
+const toneConfig = {
+  info: {
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />`,
+    defaultTitle: 'Note',
+    bgClass: 'bg-primary/5',
+    borderClass: 'border-primary/20',
+    iconClass: 'text-primary',
+    titleClass: 'text-primary',
+  },
+  success: {
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />`,
+    defaultTitle: 'Success',
+    bgClass: 'bg-success/5',
+    borderClass: 'border-success/20',
+    iconClass: 'text-success',
+    titleClass: 'text-success',
+  },
+  warning: {
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />`,
+    defaultTitle: 'Warning',
+    bgClass: 'bg-warning/5',
+    borderClass: 'border-warning/20',
+    iconClass: 'text-warning',
+    titleClass: 'text-warning',
+  },
+  danger: {
+    icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />`,
+    defaultTitle: 'Caution',
+    bgClass: 'bg-danger/5',
+    borderClass: 'border-danger/20',
+    iconClass: 'text-danger',
+    titleClass: 'text-danger',
+  },
+};
+
+const config = toneConfig[tone];
+const displayTitle = title || config.defaultTitle;
+---
+
+<div class={`callout my-6 rounded-lg border ${config.bgClass} ${config.borderClass} p-4`}>
+  <div class="flex items-start gap-3">
+    <div class={`flex-shrink-0 ${config.iconClass}`}>
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" set:html={config.icon} />
+    </div>
+    <div class="flex-1 min-w-0">
+      <p class={`callout-title font-semibold text-sm ${config.titleClass} mb-1`}>
+        {displayTitle}
+      </p>
+      <div class="callout-body text-sm text-text-2 leading-relaxed" set:html={renderedBody} />
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Ensure semantic color variables work for backgrounds/borders */
+  .callout {
+    --success: rgb(var(--success-rgb, 34, 197, 94));
+    --warning: rgb(249, 115, 22);
+    --danger: rgb(239, 68, 68);
+  }
+
+  /* Style paragraphs within callout body */
+  .callout-body p + p {
+    margin-top: 0.5rem;
+  }
+</style>

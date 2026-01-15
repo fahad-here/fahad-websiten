@@ -1,0 +1,183 @@
+---
+interface Props {
+  type: 'post' | 'caseStudy';
+  slug: string;
+  initialViews: number;
+  initialLikes: number;
+}
+
+const { type, slug, initialViews, initialLikes } = Astro.props;
+---
+
+<metrics-bar
+  data-type={type}
+  data-slug={slug}
+  data-initial-views={initialViews}
+  data-initial-likes={initialLikes}
+  class="flex items-center gap-4 text-sm text-muted"
+>
+  <span class="flex items-center gap-1.5">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+    </svg>
+    <span class="views-count">{initialViews}</span>
+    <span class="sr-only">views</span>
+  </span>
+
+  <button
+    type="button"
+    class="like-button flex items-center gap-1.5 transition-colors hover:text-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm px-1 -mx-1"
+    aria-pressed="false"
+    aria-label="Like this content"
+  >
+    <svg class="w-4 h-4 like-icon-outline" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+    <svg class="w-4 h-4 like-icon-filled hidden text-accent" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+    </svg>
+    <span class="likes-count">{initialLikes}</span>
+    <span class="sr-only">likes</span>
+  </button>
+</metrics-bar>
+
+<script>
+  class MetricsBar extends HTMLElement {
+    private type: string;
+    private slug: string;
+    private viewsCount: HTMLElement | null;
+    private likesCount: HTMLElement | null;
+    private likeButton: HTMLButtonElement | null;
+    private likeIconOutline: HTMLElement | null;
+    private likeIconFilled: HTMLElement | null;
+    private hasLiked: boolean = false;
+
+    constructor() {
+      super();
+      this.type = this.dataset.type || '';
+      this.slug = this.dataset.slug || '';
+      this.viewsCount = this.querySelector('.views-count');
+      this.likesCount = this.querySelector('.likes-count');
+      this.likeButton = this.querySelector('.like-button');
+      this.likeIconOutline = this.querySelector('.like-icon-outline');
+      this.likeIconFilled = this.querySelector('.like-icon-filled');
+    }
+
+    connectedCallback() {
+      this.checkLikeStatus();
+      this.incrementView();
+      this.setupLikeButton();
+    }
+
+    private getStorageKey(action: 'view' | 'like'): string {
+      return `${this.type}:${this.slug}:${action}`;
+    }
+
+    private checkLikeStatus() {
+      const likeKey = this.getStorageKey('like');
+      this.hasLiked = localStorage.getItem(likeKey) === 'true';
+      this.updateLikeUI();
+    }
+
+    private updateLikeUI() {
+      if (!this.likeButton || !this.likeIconOutline || !this.likeIconFilled) return;
+
+      this.likeButton.setAttribute('aria-pressed', String(this.hasLiked));
+
+      if (this.hasLiked) {
+        this.likeIconOutline.classList.add('hidden');
+        this.likeIconFilled.classList.remove('hidden');
+        this.likeButton.classList.add('text-accent');
+      } else {
+        this.likeIconOutline.classList.remove('hidden');
+        this.likeIconFilled.classList.add('hidden');
+        this.likeButton.classList.remove('text-accent');
+      }
+    }
+
+    private async incrementView() {
+      const viewKey = this.getStorageKey('view');
+
+      // Only increment once per session
+      if (sessionStorage.getItem(viewKey)) return;
+
+      try {
+        const response = await fetch('/api/view-post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: this.slug, type: this.type }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (this.viewsCount && typeof data.views === 'number') {
+            this.viewsCount.textContent = String(data.views);
+          }
+          sessionStorage.setItem(viewKey, 'true');
+        }
+      } catch (error) {
+        // Silently fail - don't break the UI
+        console.error('Failed to increment view:', error);
+      }
+    }
+
+    private setupLikeButton() {
+      if (!this.likeButton) return;
+
+      this.likeButton.addEventListener('click', async () => {
+        const action = this.hasLiked ? 'unlike' : 'like';
+
+        // Optimistic UI update
+        this.hasLiked = !this.hasLiked;
+        this.updateLikeUI();
+
+        const currentLikes = parseInt(this.likesCount?.textContent || '0', 10);
+        const newLikes = action === 'like' ? currentLikes + 1 : Math.max(0, currentLikes - 1);
+        if (this.likesCount) {
+          this.likesCount.textContent = String(newLikes);
+        }
+
+        try {
+          const response = await fetch('/api/like-post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug: this.slug, type: this.type, action }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            // Update with server value
+            if (this.likesCount && typeof data.likes === 'number') {
+              this.likesCount.textContent = String(data.likes);
+            }
+            // Persist like status
+            const likeKey = this.getStorageKey('like');
+            if (this.hasLiked) {
+              localStorage.setItem(likeKey, 'true');
+            } else {
+              localStorage.removeItem(likeKey);
+            }
+          } else {
+            // Revert on failure
+            this.hasLiked = !this.hasLiked;
+            this.updateLikeUI();
+            if (this.likesCount) {
+              this.likesCount.textContent = String(currentLikes);
+            }
+          }
+        } catch (error) {
+          // Revert on failure
+          console.error('Failed to update like:', error);
+          this.hasLiked = !this.hasLiked;
+          this.updateLikeUI();
+          if (this.likesCount) {
+            this.likesCount.textContent = String(currentLikes);
+          }
+        }
+      });
+    }
+  }
+
+  customElements.define('metrics-bar', MetricsBar);
+</script>

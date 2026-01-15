@@ -1,0 +1,341 @@
+---
+import { createHighlighter, type BundledLanguage } from 'shiki';
+
+interface Props {
+  code: string;
+  language?: string;
+  filename?: string;
+  highlightLines?: string;
+  showLineNumbers?: boolean;
+}
+
+const { code, language = 'text', filename, highlightLines, showLineNumbers = true } = Astro.props;
+
+// Count total lines for line numbers
+const totalLines = code.split('\n').length;
+
+// Parse highlight lines string (e.g., "1,3-5,10") into a Set of line numbers
+// Supports formats: "3-7", "10-14,16-19", "1,3-5,10"
+function parseHighlightLines(highlightStr?: string): Set<number> {
+  const lines = new Set<number>();
+  if (!highlightStr || typeof highlightStr !== 'string') return lines;
+
+  // Clean the string and split by commas
+  const parts = highlightStr.split(',').map((s) => s.trim()).filter(Boolean);
+
+  for (const part of parts) {
+    if (part.includes('-')) {
+      // Range format: "3-7"
+      const rangeParts = part.split('-').map((s) => s.trim());
+      if (rangeParts.length === 2) {
+        const start = parseInt(rangeParts[0], 10);
+        const end = parseInt(rangeParts[1], 10);
+
+        // Validate both are numbers and range is valid
+        if (!isNaN(start) && !isNaN(end) && start <= end && start > 0) {
+          // Prevent excessive ranges (safety limit)
+          const rangeSize = Math.min(end - start + 1, 1000);
+          for (let i = start; i < start + rangeSize; i++) {
+            lines.add(i);
+          }
+        }
+      }
+    } else {
+      // Single line format: "3"
+      const lineNum = parseInt(part, 10);
+      if (!isNaN(lineNum) && lineNum > 0) {
+        lines.add(lineNum);
+      }
+    }
+  }
+  return lines;
+}
+
+const highlightedLines = parseHighlightLines(highlightLines);
+
+// Map common language aliases to Shiki language names
+const languageMap: Record<string, string> = {
+  js: 'javascript',
+  ts: 'typescript',
+  py: 'python',
+  sh: 'bash',
+  shell: 'bash',
+  yml: 'yaml',
+  text: 'text',
+  plain: 'text',
+};
+
+const normalizedLanguage = (languageMap[language] || language) as BundledLanguage;
+
+// Language display names
+const languageNames: Record<string, string> = {
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+  jsx: 'JSX',
+  tsx: 'TSX',
+  python: 'Python',
+  bash: 'Bash',
+  shell: 'Shell',
+  sql: 'SQL',
+  json: 'JSON',
+  yaml: 'YAML',
+  html: 'HTML',
+  css: 'CSS',
+  go: 'Go',
+  rust: 'Rust',
+  ruby: 'Ruby',
+  php: 'PHP',
+  java: 'Java',
+  csharp: 'C#',
+  dockerfile: 'Dockerfile',
+  graphql: 'GraphQL',
+  markdown: 'Markdown',
+  plaintext: 'Text',
+  text: 'Text',
+};
+
+const displayLanguage = languageNames[normalizedLanguage] || language;
+
+// Create highlighter with our themes
+const highlighter = await createHighlighter({
+  themes: ['github-dark', 'github-light'],
+  langs: [normalizedLanguage],
+});
+
+// Generate HTML for both themes
+const htmlDark = highlighter.codeToHtml(code, {
+  lang: normalizedLanguage,
+  theme: 'github-dark',
+});
+
+const htmlLight = highlighter.codeToHtml(code, {
+  lang: normalizedLanguage,
+  theme: 'github-light',
+});
+
+// Process highlighted lines
+function processHighlightedLines(html: string, lines: Set<number>): string {
+  if (lines.size === 0) return html;
+
+  // Find the code content and wrap highlighted lines
+  return html.replace(/<span class="line">/g, (match, offset, str) => {
+    // Count which line number this is
+    const beforeMatch = str.substring(0, offset);
+    const lineNumber = (beforeMatch.match(/<span class="line">/g) || []).length + 1;
+
+    if (lines.has(lineNumber)) {
+      return '<span class="line highlighted">';
+    }
+    return match;
+  });
+}
+
+const processedDark = processHighlightedLines(htmlDark, highlightedLines);
+const processedLight = processHighlightedLines(htmlLight, highlightedLines);
+
+// Generate unique ID for copy functionality
+const codeId = `code-${Math.random().toString(36).substring(2, 9)}`;
+---
+
+<div class={`code-block-wrapper my-6 rounded-xl overflow-hidden border border-border bg-panel ${showLineNumbers ? 'with-line-numbers' : ''}`}>
+  {/* Header bar with filename, language, and copy button */}
+  <div class="code-block-header flex items-center justify-between px-4 py-2 border-b border-border bg-panel-2">
+    <div class="flex items-center gap-3">
+      {filename && (
+        <span class="code-filename text-xs font-medium text-text font-mono">
+          {filename}
+        </span>
+      )}
+      {!filename && (
+        <span class="code-language text-xs text-muted font-mono">
+          {displayLanguage}
+        </span>
+      )}
+      {filename && (
+        <span class="code-language text-xs text-muted font-mono">
+          {displayLanguage}
+        </span>
+      )}
+    </div>
+    <button
+      class="copy-button flex items-center gap-1.5 px-2 py-1 text-xs text-muted hover:text-text rounded transition-colors"
+      data-code-id={codeId}
+      aria-label="Copy code to clipboard"
+    >
+      <svg class="copy-icon w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+      </svg>
+      <svg class="check-icon w-3.5 h-3.5 hidden text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+      <span class="copy-text">Copy</span>
+    </button>
+  </div>
+
+  {/* Code content area */}
+  <div class="code-content-area relative">
+    {/* Line numbers gutter (if enabled) */}
+    {showLineNumbers && (
+      <div class="line-numbers-gutter" aria-hidden="true">
+        {Array.from({ length: totalLines }, (_, i) => (
+          <span class="line-number">{i + 1}</span>
+        ))}
+      </div>
+    )}
+
+    {/* Code content - dark theme (default) */}
+    <div class="code-content-dark overflow-x-auto min-w-0 flex-1 block dark:block [html[data-theme='light']_&]:hidden" set:html={processedDark} />
+
+    {/* Code content - light theme */}
+    <div class="code-content-light overflow-x-auto min-w-0 flex-1 hidden dark:hidden [html[data-theme='light']_&]:block" set:html={processedLight} />
+  </div>
+
+  {/* Hidden textarea for copy functionality */}
+  <textarea id={codeId} class="sr-only" readonly aria-hidden="true">{code}</textarea>
+</div>
+
+<style is:global>
+  /* Code block wrapper - must contain overflow */
+  .code-block-wrapper {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  /* Code block content area */
+  .code-block-wrapper .code-content-area {
+    display: flex;
+    position: relative;
+    overflow: hidden;
+    max-width: 100%;
+  }
+
+  /* Line numbers gutter */
+  .code-block-wrapper .line-numbers-gutter {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0;
+    padding-left: 0.75rem;
+    padding-right: 0.5rem;
+    text-align: right;
+    user-select: none;
+    border-right: 1px solid var(--border);
+    background: var(--panel-2);
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    flex-shrink: 0;
+    min-width: 3rem;
+  }
+
+  .code-block-wrapper .line-numbers-gutter .line-number {
+    color: var(--muted);
+    opacity: 0.5;
+  }
+
+  /* Code block styles */
+  .code-block-wrapper .shiki {
+    margin: 0;
+    padding: 1rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    background: transparent !important;
+    flex: 1 1 0%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .code-block-wrapper .shiki code {
+    display: block;
+    font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    background: transparent;
+  }
+
+  .code-block-wrapper .shiki .line {
+    display: inline-block;
+    width: 100%;
+    padding: 0 1rem;
+    white-space: pre;
+  }
+
+  /* Without line numbers, give more left padding */
+  .code-block-wrapper:not(.with-line-numbers) .shiki .line {
+    padding-left: 1rem;
+  }
+
+  .code-block-wrapper .shiki .line.highlighted {
+    background: rgba(var(--primary-rgb), 0.1);
+    border-left: 3px solid var(--primary);
+    padding-left: calc(1rem - 3px);
+  }
+
+  /* Dark theme overrides */
+  :root:not([data-theme='light']) .code-content-dark .shiki {
+    background: var(--panel) !important;
+  }
+
+  /* Light theme overrides */
+  :root[data-theme='light'] .code-content-light .shiki {
+    background: var(--panel) !important;
+  }
+
+  /* Scrollbar styling for code blocks */
+  .code-block-wrapper .shiki::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .code-block-wrapper .shiki::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .code-block-wrapper .shiki::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+
+  .code-block-wrapper .shiki::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+  }
+</style>
+
+<script is:inline>
+  // Copy button functionality
+  document.addEventListener('DOMContentLoaded', function() {
+    var copyButtons = document.querySelectorAll('.copy-button');
+
+    copyButtons.forEach(function(button) {
+      button.addEventListener('click', async function() {
+        var codeId = button.getAttribute('data-code-id');
+        if (!codeId) return;
+
+        var codeElement = document.getElementById(codeId);
+        if (!codeElement) return;
+
+        var code = codeElement.value;
+
+        try {
+          await navigator.clipboard.writeText(code);
+
+          // Show success state
+          var copyIcon = button.querySelector('.copy-icon');
+          var checkIcon = button.querySelector('.check-icon');
+          var copyText = button.querySelector('.copy-text');
+
+          if (copyIcon) copyIcon.classList.add('hidden');
+          if (checkIcon) checkIcon.classList.remove('hidden');
+          if (copyText) copyText.textContent = 'Copied!';
+
+          // Reset after 2 seconds
+          setTimeout(function() {
+            if (copyIcon) copyIcon.classList.remove('hidden');
+            if (checkIcon) checkIcon.classList.add('hidden');
+            if (copyText) copyText.textContent = 'Copy';
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy code:', err);
+        }
+      });
+    });
+  });
+</script>

@@ -1,5 +1,6 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
+import netlify from '@astrojs/netlify';
 // import sitemap from '@astrojs/sitemap';
 // TODO: Re-enable sitemap after fixing @astrojs/sitemap bug
 // See: https://github.com/withastro/astro/issues - "Cannot read properties of undefined (reading 'reduce')"
@@ -21,5 +22,6 @@ export default defineConfig({
     //   ],
     // }),
   ],
-  output: 'static',
+  output: 'hybrid',
+  adapter: netlify(),
 });

@@ -21,7 +21,9 @@ const postFields = `
   categories,
   readingTime,
   body,
-  seo
+  seo,
+  views,
+  likes
 `;
 
 const caseStudyFields = `
@@ -39,7 +41,9 @@ const caseStudyFields = `
   body,
   featured,
   publishedAt,
-  seo
+  seo,
+  views,
+  likes
 `;
 
 // Posts

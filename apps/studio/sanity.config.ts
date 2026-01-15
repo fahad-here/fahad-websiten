@@ -7,8 +7,8 @@ export default defineConfig({
   name: 'default',
   title: 'Fahad Hussain Portfolio',
 
-  projectId: process.env.SANITY_STUDIO_PROJECT_ID || 'your-project-id',
-  dataset: process.env.SANITY_STUDIO_DATASET || 'production',
+  projectId: import.meta.env.SANITY_STUDIO_PROJECT_ID || 'your-project-id',
+  dataset: import.meta.env.SANITY_STUDIO_DATASET || 'production',
 
   plugins: [structureTool(), visionTool()],
 
