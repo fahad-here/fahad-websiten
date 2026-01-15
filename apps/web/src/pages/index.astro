@@ -10,10 +10,11 @@ import HowIWork from '../components/home/HowIWork.astro';
 import LatestWriting from '../components/home/LatestWriting.astro';
 import ContactCTA from '../components/home/ContactCTA.astro';
 import { getFeaturedCaseStudies, getRecentPosts } from '../lib/sanity';
+import type { CaseStudy, Post } from '../types';
 
 // Fetch data from Sanity
-let caseStudies = [];
-let posts = [];
+let caseStudies: CaseStudy[] = [];
+let posts: Post[] = [];
 
 try {
   caseStudies = await getFeaturedCaseStudies();

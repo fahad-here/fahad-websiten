@@ -4,8 +4,9 @@ import Container from '../../components/ui/Container.astro';
 import WorkCard from '../../components/work/WorkCard.astro';
 import Badge from '../../components/ui/Badge.astro';
 import { getAllCaseStudies } from '../../lib/sanity';
+import type { CaseStudy } from '../../types';
 
-let caseStudies = [];
+let caseStudies: CaseStudy[] = [];
 
 try {
   caseStudies = await getAllCaseStudies();
